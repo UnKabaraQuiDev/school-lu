@@ -13,5 +13,7 @@
     "subject.view": "View exams",
     "section.title": "Subject list",
     "subject.title": "Exam list",
-    "index.title": "Section list"
+    "index.title": "Section list",
+    "index.pageTitle": "<translation missing>",
+    "title": "<translation missing>"
 }
