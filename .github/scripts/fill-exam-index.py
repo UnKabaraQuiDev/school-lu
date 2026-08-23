@@ -96,7 +96,7 @@ def create_table(csv_file):
 
                     <th
                         class="px-4 py-3"
-                        data-i18n="section"
+                        data-i18n="section.code"
                     >
                         Section
                     </th>

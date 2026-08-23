@@ -107,7 +107,7 @@ def create_table(section, subjects):
 
                     <th
                         class="px-4 py-3"
-                        data-i18n="subject"
+                        data-i18n="subject.code"
                     >
                         Subject
                     </th>
