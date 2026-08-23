@@ -13,6 +13,14 @@ LANGUAGES = ["en", "de", "fr"]
 
 PLACEHOLDER = "<translation missing>"
 
+I18N_SCRIPT_PATTERN = re.compile(
+    r'<script\b'
+    r'(?=[^>]*\bsrc\s*=\s*["\'][^"\']*i18n\.js[^"\']*["\'])'
+    r'(?=[^>]*\bdata-rel\s*=\s*["\']([^"\']+)["\'])'
+    r'[^>]*>',
+    re.IGNORECASE,
+)
+
 I18N_PATTERN = re.compile(
     r'data-i18n\s*=\s*["\']([^"\']+)["\']',
     re.IGNORECASE,
@@ -55,12 +63,40 @@ def get_current_branch():
 # HTML
 # ============================================================
 
-def get_i18n_keys(html_file):
-    """Return all unique data-i18n keys from an HTML file."""
+def get_i18n_info(html_file):
+    """
+    Return the i18n directory and all data-i18n keys
+    used by an HTML file.
+    """
 
     content = html_file.read_text(encoding="utf-8")
 
-    return set(I18N_PATTERN.findall(content))
+    matches = I18N_SCRIPT_PATTERN.findall(content)
+
+    if not matches:
+        #print(
+        #    f"[WARNING] No i18n.js script with data-rel found: "
+        #    f"{html_file.relative_to(ROOT_DIR)}"
+        #)
+        #return None, set()
+        relative_directory = "."
+    elif len(matches) > 1:
+        print(
+            f"[WARNING] Multiple i18n.js scripts found: "
+            f"{html_file.relative_to(ROOT_DIR)}"
+        )
+        relative_directory = matches[0]
+    else:
+        # Use the first matching data-rel.
+        relative_directory = matches[0]
+
+    i18n_directory = (
+        html_file.parent / relative_directory / "i18n"
+    ).resolve()
+
+    keys = set(I18N_PATTERN.findall(content))
+
+    return i18n_directory, keys
 
 
 # ============================================================
@@ -176,7 +212,7 @@ def main():
     html_files = [
         path
         for path in html_files
-        if ".git" not in path.parts
+        if ".git" not in path.parts and ".template.html" not in path.name
     ]
 
     print(f"Found {len(html_files)} HTML files.")
@@ -190,17 +226,18 @@ def main():
 
     for html_file in html_files:
 
-        keys = get_i18n_keys(html_file)
+        i18n_directory, keys = get_i18n_info(html_file)
 
         if not keys:
             continue
 
-        directory = html_file.parent
+        if i18n_directory is None:
+            continue
 
-        if directory not in keys_by_directory:
-            keys_by_directory[directory] = set()
+        if i18n_directory not in keys_by_directory:
+            keys_by_directory[i18n_directory] = set()
 
-        keys_by_directory[directory].update(keys)
+        keys_by_directory[i18n_directory].update(keys)
 
         print(
             f"[SCAN] {html_file.relative_to(ROOT_DIR)} "
@@ -217,11 +254,9 @@ def main():
     total_files = 0
     total_created = 0
 
-    for directory, required_keys in sorted(
+    for i18n_directory, required_keys in sorted(
         keys_by_directory.items()
     ):
-
-        i18n_directory = directory / "i18n"
 
         # Create the i18n directory if it doesn't exist.
         if not i18n_directory.exists():

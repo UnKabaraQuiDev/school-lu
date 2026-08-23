@@ -35,7 +35,7 @@ def create_section_button(section):
     href="{section_url}/"
     class="inline-block px-4 py-2 rounded-lg bg-blue-100 text-blue-700
            hover:bg-blue-200 transition"
-    data-i18n="sections.{section_url}"
+    data-i18n="section.view"
 >
     View
 </a>

@@ -5,11 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title data-i18n="title">Exam Tools</title>
+    <title>
+        <span data-i18n="index.pageTitle">Sections</span>
+        <span>/</span>
+        <span>CI</span>
+        <span>/</span>
+        <span>LATIN</span>
+    </title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/js/css.js"></script>
-    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n.js" data-rel="../../"></script>
 </head>
 
 <body class="min-h-screen bg-gray-100 text-gray-900">
@@ -17,12 +23,16 @@
     <!-- Header -->
     <header class="bg-white border-b">
         <div class="max-w-6xl mx-auto px-6 py-5">
-            <h1 class="text-2xl font-bold" data-i18n="title">
-                Exam Tools
+            <h1 class="text-2xl font-bold" data-i18n="subject.title">
+                Subject exams
             </h1>
 
-            <p class="text-gray-500 mt-1" data-i18n="subtitle">
-                Everything you need to prepare for your exams.
+            <p>
+                <a class="underline" href="../..">Sections</a>
+                <span>/</span>
+                <a class="underline" href="..">CI</a>
+                <span>/</span>
+                <a class="underline" href=".">LATIN</a>
             </p>
         </div>
 
@@ -39,16 +49,6 @@
 
     <!-- Main -->
     <main class="max-w-6xl mx-auto px-6 py-10 space-y-6">
-
-        <div>
-            <h2 class="text-2xl font-bold" data-i18n="sectionSubject.title">
-                Section: Subject
-            </h2>
-
-            <p class="text-gray-600 mt-2" data-i18n="sectionSubject.subtitle">
-                Browse all available exams for this subject.
-            </p>
-        </div>
 
         
 <div class="bg-white rounded-xl border shadow-sm overflow-hidden">

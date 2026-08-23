@@ -191,6 +191,9 @@ def generate_subject_page(
         "{{TABLE}}",
         table,
     )
+    
+    html = html.replace("{{SECTION}}", section)
+    html = html.replace("{{SUBJECT}}", subject)
 
     subject_directory = (
         EXAMS_DB_DIR

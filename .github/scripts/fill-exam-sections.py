@@ -34,7 +34,7 @@ def create_subject_button(section, subject):
     href="{subject_url}/"
     class="inline-block px-4 py-2 rounded-lg bg-blue-100 text-blue-700
            hover:bg-blue-200 transition"
-    data-i18n="subjects.{subject_url}"
+    data-i18n="subject.view"
 >
     View
 </a>
@@ -146,6 +146,8 @@ def generate_section_page(template, section, subjects):
         "{{TABLE}}",
         table,
     )
+    
+    html = html.replace("{{SECTION}}", section)
 
     section_directory = EXAMS_DB_DIR / section
     output_file = section_directory / "index.html"
