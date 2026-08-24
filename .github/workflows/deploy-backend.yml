@@ -25,6 +25,7 @@ jobs:
             BRANCH="backend"
 
             git config --global --add safe.directory "$REPO_DIR"
+            export GIT_LFS_SKIP_SMUDGE=1
 
             if [ ! -d "$REPO_DIR/.git" ]; then
               mkdir -p "$(dirname "$REPO_DIR")"
