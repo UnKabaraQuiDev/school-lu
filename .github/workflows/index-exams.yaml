@@ -1,0 +1,43 @@
+name: Generate Exam Index
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    name: Generate exam index
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          lfs: false
+          fetch-depth: 0
+          ref: main 
+
+      - name: Generate exam index
+        run: |
+          python .github/scripts/index-exams.py
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Commit & Push changes
+        run: |
+          git add exams/db.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "ci: Sync exams index"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi

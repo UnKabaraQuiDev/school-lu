@@ -1,0 +1,59 @@
+name: Fill Exam Templates
+
+on:
+  push:
+    branches:
+      - pages
+  workflow_run:
+    workflows: ["Generate Exam Index"]
+    types: [completed]
+  workflow_dispatch:
+
+env:
+  EXAM_TEMPLATES: "all index sections subjects"
+
+permissions:
+  contents: write
+
+jobs:
+  fill:
+    name: Fill exam-db template
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: pages
+          fetch-depth: 0
+          lfs: false
+      
+      - name: Create main worktree
+        env:
+          GIT_LFS_SKIP_SMUDGE: "1"
+        run: |
+          git worktree add data main
+
+      - name: Fill exam-db template
+        run: |
+          ls -la .github/scripts/
+          for name in $EXAM_TEMPLATES; do
+            echo "Running fill-exam-${name}.py"
+            python ".github/scripts/fill-exam-${name}.py"
+          done
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Commit & Push changes
+        run: |
+          git add exam-db/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "ci: Fill template for exam-db"
+            git pull --rebase origin pages
+            git push origin HEAD:pages
+          fi

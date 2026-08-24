@@ -1,0 +1,67 @@
+name: Sync workflows
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+env:
+  TARGET_BRANCHES: "pages backend"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Sync workflows
+        run: |
+          set -e
+
+          for branch in $TARGET_BRANCHES; do
+            echo "Syncing workflows to $branch"
+
+            git fetch origin "$branch"
+
+            git worktree add --detach "/tmp/worktree-$branch" "origin/$branch"
+
+            mkdir -p "/tmp/worktree-$branch/.github/workflows"
+
+            if diff -qr \
+              ".github/workflows" \
+              "/tmp/worktree-$branch/.github/workflows" > /dev/null; then
+              echo "No workflow changes for $branch"
+              git worktree remove --force "/tmp/worktree-$branch"
+              continue
+            fi
+
+            rm -rf "/tmp/worktree-$branch/.github/workflows"
+            cp -a ".github/workflows" "/tmp/worktree-$branch/.github/"
+
+            cd "/tmp/worktree-$branch"
+
+            git add .github/workflows
+
+            if git diff --cached --quiet; then
+              echo "No changes to commit for $branch"
+            else
+              git commit -m "ci: Sync workflows from main"
+              git push origin HEAD:"$branch"
+            fi
+
+            cd "$GITHUB_WORKSPACE"
+            git worktree remove --force "/tmp/worktree-$branch"
+          done
+

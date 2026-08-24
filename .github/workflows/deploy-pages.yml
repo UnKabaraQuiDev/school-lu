@@ -1,0 +1,67 @@
+name: Deploy Pages
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Check i18n Tags", "Fill Exam Templates"]
+    types: [completed]
+  push:
+    branches:
+      - pages
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ vars.PAGES_HOST }}
+          username: ${{ secrets.PAGES_USERNAME }}
+          key: ${{ secrets.PAGES_SSH_KEY }}
+          port: ${{ secrets.PAGES_PORT }}
+          script: |
+            set -e
+
+            mkdir -p /var/www
+            cd /var/www
+
+            LOC="${{ vars.PAGES_LOCATION }}"
+            git config --global --add safe.directory $LOC
+            git lfs install
+
+            if [ ! -d "$LOC/.git" ]; then
+              rm -rf $LOC/*
+              git clone \
+                --branch pages \
+                https://${{ secrets.GH_PAT }}@github.com/UnKabaraQuiDev/lu-lam-ci.git \
+                $LOC
+            fi
+
+            cd $LOC
+
+            git fetch origin pages
+            git checkout pages
+            git reset --hard origin/pages
+            git lfs pull origin pages
+
+            git fetch origin main
+
+            if [ ! -d "data" ]; then
+              git worktree add data main
+            else
+              git -C data fetch origin main
+              git -C data checkout main
+              git -C data reset --hard origin/main
+            fi
+            
+            git -C data lfs pull origin main
