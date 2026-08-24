@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  TARGET_BRANCHES: "pages"
+  TARGET_BRANCHES: "pages backend"
 
 jobs:
   sync:

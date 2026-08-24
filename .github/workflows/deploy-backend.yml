@@ -1,0 +1,58 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - backend
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+
+            REPO_DIR="/opt/school-lu"
+            REPO_URL="git@github.com:UnKabaraQuiDev/school-lu.git"
+            BRANCH="backend"
+
+            git config --global --add safe.directory "$REPO_DIR"
+
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              mkdir -p "$(dirname "$REPO_DIR")"
+
+              git clone \
+                --branch "$BRANCH" \
+                --single-branch \
+                --no-tags \
+                --depth 1 \
+                "$REPO_URL" \
+                "$REPO_DIR"
+            else
+              cd "$REPO_DIR"
+
+              git fetch \
+                --depth 1 \
+                --no-tags \
+                --no-write-fetch-head \
+                origin \
+                "$BRANCH"
+
+              git checkout "$BRANCH"
+              git reset --hard "origin/$BRANCH"
+            fi
+
+            cd "$REPO_DIR"
+
+            docker compose build
+            docker compose up -d
+
+            docker image prune -f

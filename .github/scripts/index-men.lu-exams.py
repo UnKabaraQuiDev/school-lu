@@ -1,30 +1,39 @@
 import csv
-import re
 import time
+import subprocess
 from pathlib import Path
-from urllib.parse import urljoin, urlencode
 
 import requests
-from bs4 import BeautifulSoup
-import subprocess
 
 
 BASE_URL = "https://portal.education.lu"
-ROOT_URL = f"{BASE_URL}/Services/Examens"
+API_URL = f"{BASE_URL}/DesktopModules/ResourceManager/API/Items/GetFolderContent"
+
+ROOT_FOLDER_ID = 1919
 
 GIT_DIR = Path(
     subprocess.check_output(
-        ["git", "-C", str(Path(__file__).resolve().parent), "rev-parse", "--show-toplevel"],
-        text=True
+        [
+            "git",
+            "-C",
+            str(Path(__file__).resolve().parent),
+            "rev-parse",
+            "--show-toplevel",
+        ],
+        text=True,
     ).strip()
 )
 
-OUTPUT_CSV = GIT_DIR / "exams" / "men.lu-index.csv"
+OUTPUT_CSV = GIT_DIR / "men.lu" / "index.csv"
 COOKIE_FILE = GIT_DIR / ".local" / "cookies.txt"
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64; rv:145.0) "
+    "Gecko/20100101 Firefox/145.0"
+)
 
 REQUEST_DELAY = 0.2
+PAGE_SIZE = 20
 
 
 class PortalSession:
@@ -33,9 +42,15 @@ class PortalSession:
 
         self.session.headers.update({
             "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Connection": "keep-alive",
+            "Accept": "application/json, */*",
+            "Accept-Language": "en,en-US;q=0.5",
+            "Referer": f"{BASE_URL}/Services/Examens",
+            "groupid": "-1",
+            "moduleid": "21960",
+            "tabid": "2319",
+            "Sec-GPC": "1",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
         })
 
         self.load_cookies()
@@ -44,15 +59,20 @@ class PortalSession:
         """
         Load cookies from a Netscape-style cookie file if it exists.
         """
-        if not Path(COOKIE_FILE).exists():
+        if not COOKIE_FILE.exists():
             return
 
         try:
             import http.cookiejar
 
             jar = http.cookiejar.MozillaCookieJar(COOKIE_FILE)
-            jar.load(ignore_discard=True, ignore_expires=True)
+            jar.load(
+                ignore_discard=True,
+                ignore_expires=True,
+            )
+
             self.session.cookies.update(jar)
+
         except Exception as e:
             print(f"Warning: could not load cookies: {e}")
 
@@ -61,6 +81,11 @@ class PortalSession:
         Save the current cookies for reuse on the next run.
         """
         try:
+            COOKIE_FILE.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
             import http.cookiejar
 
             jar = http.cookiejar.MozillaCookieJar(COOKIE_FILE)
@@ -68,23 +93,89 @@ class PortalSession:
             for cookie in self.session.cookies:
                 jar.set_cookie(cookie)
 
-            jar.save(ignore_discard=True, ignore_expires=True)
+            jar.save(
+                ignore_discard=True,
+                ignore_expires=True,
+            )
+
         except Exception as e:
             print(f"Warning: could not save cookies: {e}")
 
-    def get(self, url):
+    def get_folder_content(
+        self,
+        folder_id,
+        start_index=0,
+        num_items=PAGE_SIZE,
+    ):
+        """
+        Fetch one page of folder contents directly from the
+        ResourceManager API.
+        """
         time.sleep(REQUEST_DELAY)
 
-        response = self.session.get(
-            url,
-            timeout=30,
+        params = {
+            "folderId": folder_id,
+            "startIndex": start_index,
+            "numItems": num_items,
+            "sorting": "ItemName",
+        }
+
+        print(
+            f"Fetching API: folderId={folder_id}, "
+            f"startIndex={start_index}, numItems={num_items}"
         )
 
-        response.raise_for_status()
+        try:
+            response = self.session.get(
+                API_URL,
+                params=params,
+                timeout=30,
+            )
+
+            response.raise_for_status()
+
+        except requests.RequestException as e:
+            print(
+                f"ERROR: Request failed for folder "
+                f"{folder_id}: {e}"
+            )
+            raise SystemExit(1)
 
         self.save_cookies()
 
-        return response
+        content_type = response.headers.get(
+            "Content-Type",
+            "",
+        )
+
+        if "json" not in content_type.lower():
+            print(
+                f"ERROR: Unexpected response type for folder "
+                f"{folder_id}"
+            )
+            print(f"       Content-Type: {content_type}")
+            print(f"       Response: {response.text[:1000]!r}")
+            raise SystemExit(1)
+
+        try:
+            data = response.json()
+
+        except ValueError:
+            print(
+                f"ERROR: Response was not valid JSON "
+                f"for folder {folder_id}"
+            )
+            print(f"       Response: {response.text[:1000]!r}")
+            raise SystemExit(1)
+
+        if not isinstance(data, dict):
+            print(
+                f"ERROR: Unexpected JSON structure "
+                f"for folder {folder_id}"
+            )
+            raise SystemExit(1)
+
+        return data
 
 
 class Indexer:
@@ -94,192 +185,98 @@ class Indexer:
         self.rows = []
         self.visited = set()
 
-    def get_page(self, folder_id=None):
+    def get_folder_items(self, folder_id):
         """
-        Fetch either the root Examens page or a folder page.
-
-        Exit gracefully if the request fails or the response is invalid.
+        Fetch every item in a folder, handling API pagination.
         """
-        if folder_id is None:
-            url = ROOT_URL
-        else:
-            url = f"{ROOT_URL}?{urlencode({'folderId': folder_id})}"
-
-        print()
-        print(f"Fetching: {url}")
-
-        try:
-            response = self.client.get(url)
-        except requests.RequestException as e:
-            print(f"ERROR: Request failed for {url}")
-            print(f"       {e}")
-            raise SystemExit(1)
-        
-        recv_dir = GIT_DIR / ".local"
-        recv_dir.mkdir(parents=True, exist_ok=True)
-
-        recv_file = recv_dir / "recv.html"
-
-        print(f"       Status: {response.status_code}")
-
-        if not response.ok:
-            print(f"ERROR: Invalid HTTP response for {url}")
-            print(f"       Status: {response.status_code}")
-            print(f"       Response: {response.text[:1000]!r}")
-            raise SystemExit(1)
-
-        if not response.text or not response.text.strip():
-            print(f"ERROR: Empty response for {url}")
-            print(f"       Status: {response.status_code}")
-            raise SystemExit(1)
-
-        # Basic sanity check that we actually received HTML.
-        content_type = response.headers.get("Content-Type", "")
-        print(f"       Content-Type: {content_type}")
-        print(f"       Response: {response.text[:1000]!r}")
-
-        if "html" not in content_type.lower():
-            print(f"ERROR: Unexpected response type for {url}")
-            print(f"       Content-Type: {content_type}")
-            print(f"       Response: {response.text[:1000]!r}")
-            raise SystemExit(1)
-
-        # Make sure BeautifulSoup can parse something meaningful.
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        if not soup.find("html") and not soup.find("div"):
-            print(f"ERROR: Invalid/empty HTML response for {url}")
-            print(f"       Response: {response.text[:1000]!r}")
-            raise SystemExit(1)
-        
-        return response.text
-
-    @staticmethod
-    def get_direct_or_nested_title(element):
-        """
-        Get the title from a <p title="..."> element.
-        """
-        title = element.get("title")
-
-        if title:
-            return title.strip()
-
-        return element.get_text(strip=True)
-
-    @staticmethod
-    def is_pdf_title(title):
-        return title.lower().endswith(".pdf")
-
-    @staticmethod
-    def extract_folder_id(folder):
-        """
-        Extract the ID from:
-
-            id="thumbnail-12345"
-        """
-        element_id = folder.get("id", "")
-
-        match = re.fullmatch(r"thumbnail-(\d+)", element_id)
-
-        if not match:
-            return None
-
-        return match.group(1)
-
-    def parse_container(self, container):
-        """
-        Find the title and folder/file elements belonging to one
-        rm-card-container.
-
-        The important part is that descendants are searched rather than
-        only direct children.
-        """
-
-        # Find all p[title] elements anywhere inside the card.
-        title_elements = container.find_all("p", attrs={"title": True})
-
-        if not title_elements:
-            return []
-
-        results = []
-
-        for p in title_elements:
-            title = self.get_direct_or_nested_title(p)
-
-            if not title:
-                continue
-
-            # A PDF is a file. We don't recurse into it.
-            if self.is_pdf_title(title):
-                results.append({
-                    "type": "file",
-                    "title": title,
-                    "id": None,
-                })
-                continue
-
-            # Find a matching folder somewhere inside this card.
-            folder = container.find(
-                "div",
-                class_=lambda classes: (
-                    classes is not None
-                    and "rm-circular" in classes
-                    and "rm-folder" in classes
-                ),
-                id=re.compile(r"^thumbnail-\d+$"),
-            )
-
-            if folder:
-                folder_id = self.extract_folder_id(folder)
-
-                if folder_id:
-                    results.append({
-                        "type": "folder",
-                        "title": title,
-                        "id": folder_id,
-                    })
-
-        return results
-
-    def parse_page(self, html):
-        soup = BeautifulSoup(html, "html.parser")
-
-        containers = soup.find_all(
-            "div",
-            class_="rm-card-container",
+        first_page = self.client.get_folder_content(
+            folder_id=folder_id,
+            start_index=0,
+            num_items=PAGE_SIZE,
         )
 
-        results = []
+        folder = first_page.get("folder")
 
-        for container in containers:
-            results.extend(self.parse_container(container))
+        if not folder:
+            print(
+                f"ERROR: API response for folder "
+                f"{folder_id} has no folder object"
+            )
+            raise SystemExit(1)
 
-        return results
+        total_count = first_page.get("totalCount", 0)
 
-    def index_folder(self, folder_id=None, parent_id=None, parents=None):
+        items = list(first_page.get("items", []))
+
+        print(
+            f"       Folder: {folder.get('folderPath', '')}"
+            f" | {len(items)}/{total_count} items"
+        )
+
+        # Fetch additional pages if necessary.
+        start_index = len(items)
+
+        while start_index < total_count:
+            page = self.client.get_folder_content(
+                folder_id=folder_id,
+                start_index=start_index,
+                num_items=PAGE_SIZE,
+            )
+
+            page_items = page.get("items", [])
+
+            if not page_items:
+                print(
+                    f"WARNING: API returned no items at "
+                    f"startIndex={start_index}"
+                )
+                break
+
+            items.extend(page_items)
+            start_index += len(page_items)
+
+            print(
+                f"       Progress: "
+                f"{len(items)}/{total_count} items"
+            )
+
+        return folder, items
+
+    def index_folder(
+        self,
+        folder_id,
+        parent_id=None,
+        parents=None,
+    ):
         """
         Recursively index a folder.
 
-        parents contains the titles of all ancestors.
+        `parents` contains the names of all ancestor folders.
         """
         if parents is None:
             parents = []
 
-        # Prevent accidental loops.
-        visit_key = folder_id if folder_id is not None else "ROOT"
-
-        if visit_key in self.visited:
-            print(f"Skipping already visited folder: {visit_key}")
+        if folder_id in self.visited:
+            print(
+                f"Skipping already visited folder: "
+                f"{folder_id}"
+            )
             return
 
-        self.visited.add(visit_key)
+        self.visited.add(folder_id)
 
-        html = self.get_page(folder_id)
-        items = self.parse_page(html)
+        folder, items = self.get_folder_items(folder_id)
 
         for item in items:
-            title = item["title"]
-            item_id = item["id"]
+            item_id = item.get("itemId")
+            title = item.get("itemName", "")
+            is_folder = item.get("isFolder", False)
+
+            if not title:
+                print(
+                    f"WARNING: Item {item_id} has no name"
+                )
+                continue
 
             combined_title = "/".join(
                 parents + [title]
@@ -296,11 +293,11 @@ class Indexer:
 
             print(
                 f"Indexed: {combined_title}"
-                f" | id={item_id or 'file'}"
+                f" | id={item_id}"
+                f" | type={'folder' if is_folder else 'file'}"
             )
 
-            # Only folders are recursively crawled.
-            if item["type"] == "folder":
+            if is_folder:
                 self.index_folder(
                     folder_id=item_id,
                     parent_id=item_id,
@@ -308,6 +305,11 @@ class Indexer:
                 )
 
     def write_csv(self):
+        OUTPUT_CSV.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         with open(
             OUTPUT_CSV,
             "w",
@@ -328,14 +330,19 @@ class Indexer:
             writer.writerows(self.rows)
 
         print()
-        print(f"Wrote {len(self.rows)} entries to {OUTPUT_CSV}")
+        print(
+            f"Wrote {len(self.rows)} entries "
+            f"to {OUTPUT_CSV}"
+        )
 
 
 def main():
     indexer = Indexer()
 
     try:
-        indexer.index_folder()
+        indexer.index_folder(
+            folder_id=ROOT_FOLDER_ID,
+        )
     finally:
         indexer.client.save_cookies()
 
