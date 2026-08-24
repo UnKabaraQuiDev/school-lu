@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Running  Spotless..."
+
+mvn -Pformat initialize spotless:apply
+
+if [ $? -ne 0 ]; then
+    echo "Spotless failed. Commit aborted."
+    exit 1
+fi
+
+# Stage any files modified by Spotless
+git add -A
+
+exit 0

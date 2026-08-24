@@ -33,7 +33,7 @@
 			<dependency>
 				<groupId>lu.kbra</groupId>
 				<artifactId>pclib</artifactId>
-				<version>1.2.0</version>
+				<version>1.2.1-SNAPSHOT</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -65,6 +65,10 @@
 		</dependency>
 		<dependency>
 			<groupId>lu.kbra</groupId>
+			<artifactId>pclib-db-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>lu.kbra</groupId>
 			<artifactId>pclib-db-spring</artifactId>
 		</dependency>
 
@@ -84,5 +88,35 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>format</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.diffplug.spotless</groupId>
+						<artifactId>spotless-maven-plugin</artifactId>
+						<version>3.9.0</version>
+						<configuration>
+							<java>
+								<eclipse>
+									<file>
+										https://raw.githubusercontent.com/UnKabaraQuiDev/PCLib/main/eclipse-format.xml
+									</file>
+								</eclipse>
+								<removeUnusedImports />
+								<importOrder>
+									<order>java,javax,org,com,lu</order>
+								</importOrder>
+								<trimTrailingWhitespace />
+								<endWithNewline />
+							</java>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
