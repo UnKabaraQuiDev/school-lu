@@ -1,0 +1,19 @@
+spring:
+  main.show-banner: true
+
+pclib:
+  db:
+    enabled: true
+    auto-create: true
+    auto-migrate: false
+    auto-add-columns: true
+    auto-remove-columns: true
+
+    postgres-main:
+      qualifier: postgresMain
+      protocol: postgresql
+      name: school_lu
+      host: localhost
+      port: 5432
+      username: postgres
+      password: postgres

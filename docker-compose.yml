@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: school-lu
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      PCLIB_DB_POSTGRES_MAIN_HOST: postgres
+      PCLIB_DB_POSTGRES_MAIN_PORT: 5432
+      PCLIB_DB_POSTGRES_MAIN_DATABASE: school_lu
+      PCLIB_DB_POSTGRES_MAIN_USERNAME: school_lu
+      PCLIB_DB_POSTGRES_MAIN_PASSWORD: school_lu
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17
+    container_name: school-lu-postgres
+    environment:
+      POSTGRES_DB: school_lu
+      POSTGRES_USER: school_lu
+      POSTGRES_PASSWORD: school_lu
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U school_lu -d school_lu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
