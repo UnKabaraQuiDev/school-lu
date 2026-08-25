@@ -1,6 +1,9 @@
 spring:
   main.show-banner: true
 
+server:
+  forward-headers-strategy: framework
+
 app:
   cors:
     urls: []
