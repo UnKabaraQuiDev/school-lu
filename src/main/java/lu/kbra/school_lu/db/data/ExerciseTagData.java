@@ -1,6 +1,5 @@
 package lu.kbra.school_lu.db.data;
 
-import lombok.Data;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
@@ -10,6 +9,8 @@ import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.ExerciseTable;
 import lu.kbra.school_lu.db.table.TagTable;
+
+import lombok.Data;
 
 @Data
 public class ExerciseTagData implements DatabaseEntry {

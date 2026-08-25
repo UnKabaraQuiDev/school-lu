@@ -4,10 +4,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.service.UserService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor

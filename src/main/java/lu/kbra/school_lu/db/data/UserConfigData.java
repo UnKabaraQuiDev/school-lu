@@ -1,6 +1,5 @@
 package lu.kbra.school_lu.db.data;
 
-import lombok.Data;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
@@ -8,6 +7,8 @@ import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.UserTable;
+
+import lombok.Data;
 
 @Data
 public class UserConfigData implements DatabaseEntry {

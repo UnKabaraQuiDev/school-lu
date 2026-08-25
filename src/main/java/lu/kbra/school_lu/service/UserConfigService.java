@@ -7,12 +7,12 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
-import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.impl.DeferredDBTransaction;
 import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.db.data.UserConfigData;
 import lu.kbra.school_lu.db.table.UserConfigTable;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class UserConfigService {
 	}
 
 	public void setConfig(final UserId id, final Map<String, String> map) {
-		try (DeferredDBTransaction transaction = ((DeferredDatabase) this.userConfigTable.getDatabase()).createTransaction()) {
+		try (DeferredDBTransaction transaction = this.userConfigTable.getDatabase().createTransaction()) {
 			final UserConfigTable userConfigProxy = transaction.use(this.userConfigTable);
 
 			final List<UserConfigData> datas = userConfigProxy.byUserId(0);

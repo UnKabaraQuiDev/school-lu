@@ -2,7 +2,6 @@ package lu.kbra.school_lu.db.data;
 
 import java.time.Instant;
 
-import lombok.Data;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
@@ -12,6 +11,8 @@ import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.Version;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
+
+import lombok.Data;
 
 @Data
 public class UserData implements DatabaseEntry {

@@ -8,13 +8,14 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "${CONTAINER_PORT}:8080"
     environment:
+      APP_CORS_URLS: ${CORS_URLS}
       PCLIB_DB_POSTGRES_MAIN_HOST: postgres
       PCLIB_DB_POSTGRES_MAIN_PORT: 5432
       PCLIB_DB_POSTGRES_MAIN_DATABASE: school_lu
       PCLIB_DB_POSTGRES_MAIN_USERNAME: school_lu
-      PCLIB_DB_POSTGRES_MAIN_PASSWORD: school_lu
+      PCLIB_DB_POSTGRES_MAIN_PASSWORD: ${DB_PWD}
     restart: unless-stopped
 
   postgres:
@@ -23,9 +24,7 @@ services:
     environment:
       POSTGRES_DB: school_lu
       POSTGRES_USER: school_lu
-      POSTGRES_PASSWORD: school_lu
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PWD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

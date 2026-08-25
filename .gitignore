@@ -61,3 +61,7 @@ local.properties
 .project
 
 target/
+
+docker-compose.override.yml
+.env
+pclib/
