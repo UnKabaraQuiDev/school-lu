@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Backend
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
             set -e
 
             REPO_DIR="/opt/school-lu"
-            REPO_URL="git@github.com:UnKabaraQuiDev/school-lu.git"
+            REPO_URL="https://x-access-token:${{ secrets.WORKFLOW_PAT }}@github.com/UnKabaraQuiDev/school-lu.git"
             BRANCH="backend"
 
             git config --global --add safe.directory "$REPO_DIR"
@@ -61,7 +61,7 @@ jobs:
                     --branch dev \
                     --single-branch \
                     --depth 1 \
-                    git@github.com:UnKabaraQuiDev/PCLib.git \
+                    "https://x-access-token:${{ secrets.WORKFLOW_PAT }}@github.com/UnKabaraQuiDev/PCLib.git" \
                     pclib
 
                 if ! grep -qxF "pclib/" .git/info/exclude 2>/dev/null; then
