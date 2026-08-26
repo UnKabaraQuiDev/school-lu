@@ -75,7 +75,7 @@ jobs:
 
             export APP_CORS_URLS="${{ vars.BACKEND_CORS_URLS }}"
             export DB_PWD="${{ secrets.BACKEND_DB_PWD }}"
-			      export CONTAINER_PORT="${{ vars.BACKEND_CONTAINER_PORT }}"
+            export CONTAINER_PORT="${{ vars.BACKEND_CONTAINER_PORT }}"
 
             docker compose build
             docker compose up -d --remove-orphans
