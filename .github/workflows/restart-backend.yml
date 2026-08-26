@@ -24,6 +24,9 @@ jobs:
           script: |
             set -e
 
+            REPO_DIR="/opt/school-lu"
+            cd "$REPO_DIR"
+
             export CORS_URLS="${{ vars.BACKEND_CORS_URLS }}"
             export DB_PWD="${{ secrets.BACKEND_DB_PWD }}"
             export CONTAINER_PORT="${{ vars.BACKEND_CONTAINER_PORT }}"
