@@ -14,9 +14,10 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          host: ${{ vars.BACKEND_HOST }}
+          username: ${{ secrets.BACKEND_USER }}
+          key: ${{ secrets.BACKEND_SSH_KEY }}
+          port: ${{ secrets.BACKEND_PORT }}
           script: |
             set -e
 
@@ -53,7 +54,30 @@ jobs:
 
             cd "$REPO_DIR"
 
+            if [ ! -d "pclib/.git" ]; then
+                rm -rf pclib
+
+                git clone \
+                    --branch dev \
+                    --single-branch \
+                    --depth 1 \
+                    git@github.com:UnKabaraQuiDev/PCLib.git \
+                    pclib
+
+                if ! grep -qxF "pclib/" .git/info/exclude 2>/dev/null; then
+                    echo "pclib/" >> .git/info/exclude
+                fi
+            else
+                git -C pclib fetch --depth 1 origin dev
+                git -C pclib checkout dev
+                git -C pclib reset --hard origin/dev
+            fi
+
+            export APP_CORS_URLS="${{ vars.BACKEND_CORS_URLS }}"
+            export DB_PWD="${{ secrets.BACKEND_DB_PWD }}"
+			export CONTAINER_PORT="${{ vars.BACKEND_CONTAINER_PORT }}"
+
             docker compose build
-            docker compose up -d
+            docker compose up -d --remove-orphans
 
             docker image prune -f
