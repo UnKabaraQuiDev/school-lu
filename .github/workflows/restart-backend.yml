@@ -1,0 +1,33 @@
+name: Restart Backend
+
+on:
+  push:
+    branches:
+      - backend
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy Backend"]
+    types: [completed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.BACKEND_HOST }}
+          port: ${{ secrets.BACKEND_PORT }}
+          username: ${{ secrets.BACKEND_USER }}
+          key: ${{ secrets.BACKEND_SSH_KEY }}
+          script: |
+            set -e
+
+            export CORS_URLS="${{ vars.BACKEND_CORS_URLS }}"
+            export DB_PWD="${{ secrets.BACKEND_DB_PWD }}"
+            export CONTAINER_PORT="${{ vars.BACKEND_CONTAINER_PORT }}"
+
+            docker compose up -d --remove-orphans
+
+            docker image prune -f
