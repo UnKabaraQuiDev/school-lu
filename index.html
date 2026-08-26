@@ -10,6 +10,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/js/css.js"></script>
     <script src="/js/i18n.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        (async () => {
+            const result = await fetch(apiUrl("me"), {
+                method: "GET",
+                credentials: "include"
+            });
+
+            console.log(await result.json());
+        })();
+    </script>
 </head>
 
 <body class="min-h-screen bg-gray-100 text-gray-900">
