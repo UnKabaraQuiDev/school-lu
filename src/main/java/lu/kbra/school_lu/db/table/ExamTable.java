@@ -9,7 +9,7 @@ import lu.kbra.school_lu.db.data.ExamData;
 @Component
 public abstract class ExamTable extends DeferredDatabaseTable<ExamData> {
 
-	public ExamTable(DeferredDatabase database) {
+	public ExamTable(final DeferredDatabase database) {
 		super(database);
 	}
 

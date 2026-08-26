@@ -9,7 +9,7 @@ import lu.kbra.school_lu.db.data.ExerciseTagData;
 @Component
 public abstract class ExerciseTagTable extends DeferredDatabaseTable<ExerciseTagData> {
 
-	public ExerciseTagTable(DeferredDatabase database) {
+	public ExerciseTagTable(final DeferredDatabase database) {
 		super(database);
 	}
 

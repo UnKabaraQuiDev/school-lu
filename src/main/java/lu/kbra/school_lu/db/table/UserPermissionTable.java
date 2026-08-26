@@ -8,16 +8,16 @@ import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
-import lu.kbra.school_lu.db.data.UserConfigData;
+import lu.kbra.school_lu.db.data.UserPermissionData;
 
 @Component
-public abstract class UserConfigTable extends DeferredDatabaseTable<UserConfigData> {
+public abstract class UserPermissionTable extends DeferredDatabaseTable<UserPermissionData> {
 
-	public UserConfigTable(final DeferredDatabase database) {
+	public UserPermissionTable(final DeferredDatabase database) {
 		super(database);
 	}
 
 	@Query
-	public abstract List<UserConfigData> byUserId(@Param long userId);
+	public abstract List<UserPermissionData> byUserId(@Param final long userId);
 
 }

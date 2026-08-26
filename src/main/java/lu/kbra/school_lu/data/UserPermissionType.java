@@ -1,0 +1,21 @@
+package lu.kbra.school_lu.data;
+
+public enum UserPermissionType {
+
+	USER_MANAGE_ACCESS,
+	USER_MANAGE_CONFIG,
+	USER_MANAGE_PERMISSION,
+
+	ADD_EXAM,
+	REMOVE_EXAM,
+	EDIT_EXAM,
+
+	ADD_SECTION,
+	REMOVE_SECTION,
+	EDIT_SECTION,
+
+	ADD_SUBJECT,
+	REMOVE_SUBJECT,
+	EDIT_SUBJECT;
+
+}

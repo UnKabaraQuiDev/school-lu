@@ -9,8 +9,10 @@ import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.UserTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class UserConfigData implements DatabaseEntry {
 
 	@Column
@@ -26,12 +28,12 @@ public class UserConfigData implements DatabaseEntry {
 	@Column
 	private String value;
 
-	public UserConfigData(Long userId, String key) {
+	public UserConfigData(final Long userId, final String key) {
 		this.userId = userId;
 		this.key = key;
 	}
 
-	public UserConfigData(Long userId, String key, String value) {
+	public UserConfigData(final Long userId, final String key, final String value) {
 		this.userId = userId;
 		this.key = key;
 		this.value = value;

@@ -9,7 +9,7 @@ import lu.kbra.school_lu.db.data.UserConnectionData;
 @Component
 public abstract class UserConnectionTable extends DeferredDatabaseTable<UserConnectionData> {
 
-	public UserConnectionTable(DeferredDatabase database) {
+	public UserConnectionTable(final DeferredDatabase database) {
 		super(database);
 	}
 

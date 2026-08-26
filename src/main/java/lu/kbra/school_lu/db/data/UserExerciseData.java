@@ -15,8 +15,10 @@ import lu.kbra.school_lu.db.table.ExerciseTable;
 import lu.kbra.school_lu.db.table.UserTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class UserExerciseData implements DatabaseEntry {
 
 	@Column
@@ -40,11 +42,11 @@ public class UserExerciseData implements DatabaseEntry {
 	@MaxLength(24)
 	private ExerciseStatus status;
 
-	public UserExerciseData(Long id) {
+	public UserExerciseData(final Long id) {
 		this.id = id;
 	}
 
-	public UserExerciseData(Long userId, Long exerciseId, Instant timestamp, ExerciseStatus status) {
+	public UserExerciseData(final Long userId, final Long exerciseId, final Instant timestamp, final ExerciseStatus status) {
 		this.userId = userId;
 		this.exerciseId = exerciseId;
 		this.timestamp = timestamp;

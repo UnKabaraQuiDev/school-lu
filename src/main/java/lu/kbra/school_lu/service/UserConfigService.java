@@ -28,7 +28,7 @@ public class UserConfigService {
 		try (DeferredDBTransaction transaction = this.userConfigTable.getDatabase().createTransaction()) {
 			final UserConfigTable userConfigProxy = transaction.use(this.userConfigTable);
 
-			final List<UserConfigData> datas = userConfigProxy.byUserId(0);
+			final List<UserConfigData> datas = userConfigProxy.byUserId(id.id());
 			final List<UserConfigData> toKeep = new ArrayList<>();
 			datas.removeIf(c -> {
 				if (map.containsKey(c.getKey())) {

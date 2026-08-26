@@ -10,8 +10,10 @@ import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.SubjectTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class ExamData implements DatabaseEntry {
 
 	@Column
@@ -36,11 +38,11 @@ public class ExamData implements DatabaseEntry {
 	@Unique(1)
 	private boolean retry;
 
-	public ExamData(Long id) {
+	public ExamData(final Long id) {
 		this.id = id;
 	}
 
-	public ExamData(Long subjectId, int year, int season, boolean retry) {
+	public ExamData(final Long subjectId, final int year, final int season, final boolean retry) {
 		this.subjectId = subjectId;
 		this.year = year;
 		this.season = season;

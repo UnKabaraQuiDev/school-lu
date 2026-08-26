@@ -11,8 +11,10 @@ import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.SectionTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class SubjectData implements DatabaseEntry {
 
 	@Column
@@ -30,11 +32,11 @@ public class SubjectData implements DatabaseEntry {
 	@MaxLength(150)
 	private String name;
 
-	public SubjectData(Long id) {
+	public SubjectData(final Long id) {
 		this.id = id;
 	}
 
-	public SubjectData(Long sectionId, String name) {
+	public SubjectData(final Long sectionId, final String name) {
 		this.sectionId = sectionId;
 		this.name = name;
 	}
