@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Running  Spotless..."
+echo "Running Spotless..."
 
 mvn -Pformat initialize spotless:apply
 
