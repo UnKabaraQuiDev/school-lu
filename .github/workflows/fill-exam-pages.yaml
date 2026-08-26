@@ -32,6 +32,7 @@ jobs:
         env:
           GIT_LFS_SKIP_SMUDGE: "1"
         run: |
+          git fetch origin main
           git worktree add data main
 
       - name: Fill exam-db template
