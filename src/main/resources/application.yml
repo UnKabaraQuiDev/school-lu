@@ -1,6 +1,13 @@
 spring:
   main.show-banner: true
 
+server:
+  forward-headers-strategy: framework
+
+app:
+  cors:
+    urls: []
+
 pclib:
   db:
     enabled: true

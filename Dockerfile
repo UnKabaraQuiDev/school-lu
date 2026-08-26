@@ -2,8 +2,11 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /build
 
+RUN git -C pclib pull || true
+COPY pclib/ pclib/
 COPY pom.xml .
 
+RUN mvn -f pclib/pom.xml install -DskipTests -B
 RUN mvn dependency:go-offline -B
 
 COPY src ./src
