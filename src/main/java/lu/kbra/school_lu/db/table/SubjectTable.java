@@ -9,7 +9,7 @@ import lu.kbra.school_lu.db.data.SubjectData;
 @Component
 public abstract class SubjectTable extends DeferredDatabaseTable<SubjectData> {
 
-	public SubjectTable(DeferredDatabase database) {
+	public SubjectTable(final DeferredDatabase database) {
 		super(database);
 	}
 

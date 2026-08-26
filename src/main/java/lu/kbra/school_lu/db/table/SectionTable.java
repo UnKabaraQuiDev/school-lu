@@ -9,7 +9,7 @@ import lu.kbra.school_lu.db.data.SectionData;
 @Component
 public abstract class SectionTable extends DeferredDatabaseTable<SectionData> {
 
-	public SectionTable(DeferredDatabase database) {
+	public SectionTable(final DeferredDatabase database) {
 		super(database);
 	}
 

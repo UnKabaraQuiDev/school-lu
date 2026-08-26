@@ -6,15 +6,19 @@ import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.DefaultValue;
+import lu.kbra.pclib.db.annotations.entry.Nullable;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.Version;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
+import lu.kbra.school_lu.data.UserId;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class UserData implements DatabaseEntry {
 
 	@Column
@@ -45,17 +49,17 @@ public class UserData implements DatabaseEntry {
 	private Instant createdAt;
 
 	@Column
-	@DefaultValue("{F:current_timestamp}")
+	@Nullable
 	private Instant lastLogin;
 
 	@Column
 	private boolean enabled;
 
-	public UserData(Long id) {
+	public UserData(final Long id) {
 		this.id = id;
 	}
 
-	public UserData(String username, String email, String passwordHash) {
+	public UserData(final String username, final String email, final String passwordHash) {
 		this.username = username;
 		this.email = email;
 		this.passwordHash = passwordHash;
@@ -65,6 +69,10 @@ public class UserData implements DatabaseEntry {
 	@Override
 	public UserData clone() {
 		return PCUtils.safeClone(super::clone);
+	}
+
+	public UserId toUserId() {
+		return new UserId(this.id);
 	}
 
 }

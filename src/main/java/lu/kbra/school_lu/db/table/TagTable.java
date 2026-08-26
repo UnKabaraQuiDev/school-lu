@@ -9,7 +9,7 @@ import lu.kbra.school_lu.db.data.TagData;
 @Component
 public abstract class TagTable extends DeferredDatabaseTable<TagData> {
 
-	public TagTable(DeferredDatabase database) {
+	public TagTable(final DeferredDatabase database) {
 		super(database);
 	}
 

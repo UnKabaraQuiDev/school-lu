@@ -11,8 +11,10 @@ import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.UserTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class UserConnectionData implements DatabaseEntry {
 
 	@Column
@@ -38,11 +40,11 @@ public class UserConnectionData implements DatabaseEntry {
 	@MaxLength(320)
 	private String email;
 
-	public UserConnectionData(Long id) {
+	public UserConnectionData(final Long id) {
 		this.id = id;
 	}
 
-	public UserConnectionData(Long userId, String provider, String providerUserId, String email) {
+	public UserConnectionData(final Long userId, final String provider, final String providerUserId, final String email) {
 		this.userId = userId;
 		this.provider = provider;
 		this.providerUserId = providerUserId;

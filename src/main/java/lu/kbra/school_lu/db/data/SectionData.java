@@ -9,8 +9,10 @@ import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class SectionData implements DatabaseEntry {
 
 	@Column
@@ -23,11 +25,11 @@ public class SectionData implements DatabaseEntry {
 	@MaxLength(150)
 	private String name;
 
-	public SectionData(Long id) {
+	public SectionData(final Long id) {
 		this.id = id;
 	}
 
-	public SectionData(String name) {
+	public SectionData(final String name) {
 		this.name = name;
 	}
 

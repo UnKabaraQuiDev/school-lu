@@ -11,8 +11,10 @@ import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.ExamTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class ExerciseData implements DatabaseEntry {
 
 	@Column
@@ -33,11 +35,11 @@ public class ExerciseData implements DatabaseEntry {
 	@MaxLength(1024)
 	private String image;
 
-	public ExerciseData(Long id) {
+	public ExerciseData(final Long id) {
 		this.id = id;
 	}
 
-	public ExerciseData(Long examId, int exerciseIndex, String image) {
+	public ExerciseData(final Long examId, final int exerciseIndex, final String image) {
 		this.examId = examId;
 		this.exerciseIndex = exerciseIndex;
 		this.image = image;

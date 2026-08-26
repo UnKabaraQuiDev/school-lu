@@ -11,8 +11,10 @@ import lu.kbra.school_lu.db.table.ExerciseTable;
 import lu.kbra.school_lu.db.table.TagTable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class ExerciseTagData implements DatabaseEntry {
 
 	@Column
@@ -30,11 +32,11 @@ public class ExerciseTagData implements DatabaseEntry {
 	@Unique(1)
 	private Long tagId;
 
-	public ExerciseTagData(Long id) {
+	public ExerciseTagData(final Long id) {
 		this.id = id;
 	}
 
-	public ExerciseTagData(Long exerciseId, Long tagId) {
+	public ExerciseTagData(final Long exerciseId, final Long tagId) {
 		this.exerciseId = exerciseId;
 		this.tagId = tagId;
 	}

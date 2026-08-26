@@ -1,7 +1,5 @@
 package lu.kbra.school_lu.service;
 
-import java.util.List;
-
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,14 +19,13 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
 	private final UserTable userTable;
 	private final PasswordEncoder passwordEncoder;
 
-	public UserAuthenticationProvider(UserTable userTable, PasswordEncoder passwordEncoder) {
-
+	public UserAuthenticationProvider(final UserTable userTable, final PasswordEncoder passwordEncoder) {
 		this.userTable = userTable;
 		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Override
-	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+	public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
 		final String username = authentication.getName();
 		final String password = String.valueOf(authentication.getCredentials());
 
@@ -43,11 +40,11 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
 			throw new BadCredentialsException("Invalid username or password");
 		}
 
-		return new UserAuthentication(new UserId(user.getId()), List.of());
+		return new UserAuthentication(new UserId(user.getId()));
 	}
 
 	@Override
-	public boolean supports(Class<?> authentication) {
+	public boolean supports(final Class<?> authentication) {
 		return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
 	}
 
