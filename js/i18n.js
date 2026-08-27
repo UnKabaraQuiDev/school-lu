@@ -19,8 +19,15 @@ async function loadTranslations(language) {
     return await response.json();
 }
 
+let currentLanguage = "en";
+
 async function setLanguage(language) {
+    if (!supportedLanguages.includes(language)) {
+        language = "en";
+    }
+
     console.log(`Using language: ${language}`);
+
     const translations = await loadTranslations(language);
 
     document.querySelectorAll("[data-i18n]").forEach(element => {
@@ -31,7 +38,6 @@ async function setLanguage(language) {
         }
     });
 
-    // Merge <title> contents into a single text string
     document.querySelectorAll("title").forEach(title => {
         let html = title.textContent;
 
@@ -44,18 +50,20 @@ async function setLanguage(language) {
             }
         );
 
-        // Remove remaining span tags
         html = html.replace(/<\/?span\b[^>]*>/gi, "");
-
-        // Normalize whitespace
         html = html.trim().replace(/\s+/g, " ");
 
         title.textContent = html;
     });
 
     localStorage.setItem("language", language);
-
     document.documentElement.lang = language;
+
+    currentLanguage = language;
+}
+
+async function reloadLanguage() {
+    await setLanguage(currentLanguage);
 }
 
 const savedLanguage = localStorage.getItem("language");

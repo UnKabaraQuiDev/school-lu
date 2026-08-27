@@ -1,5 +1,3 @@
-let csrf;
-
 async function login(username, password) {
     return await fetch(
         apiUrl("login"),
@@ -37,21 +35,6 @@ async function register(username, email, password, confirmPassword) {
         }
     );
 }
-
-async function initCsrf() {
-    const response = await fetch(apiUrl("csrf"), {
-        method: "GET",
-        credentials: "include"
-    });
-
-    if (!response.ok) {
-        throw new Error("Failed to obtain CSRF token");
-    }
-
-    csrf = await response.json();
-    console.log("got", csrf)
-}
-
 document.addEventListener("DOMContentLoaded", function () {
     initCsrf();
 
