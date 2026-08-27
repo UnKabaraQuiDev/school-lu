@@ -79,7 +79,7 @@ public class SecurityConfig {
 		final CorsConfiguration configuration = new CorsConfiguration();
 
 		configuration.setAllowedOrigins(hosts);
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 		configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
 		configuration.setAllowCredentials(true);
 

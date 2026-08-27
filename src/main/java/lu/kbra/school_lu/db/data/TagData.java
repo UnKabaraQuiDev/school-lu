@@ -25,6 +25,9 @@ public class TagData implements DatabaseEntry {
 	@MaxLength(100)
 	private String name;
 
+	@Column
+	private int color;
+
 	public TagData(final Long id) {
 		this.id = id;
 	}
@@ -37,4 +40,5 @@ public class TagData implements DatabaseEntry {
 	public TagData clone() {
 		return PCUtils.safeClone(super::clone);
 	}
+
 }

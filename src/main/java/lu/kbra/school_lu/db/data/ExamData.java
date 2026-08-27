@@ -6,6 +6,7 @@ import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
+import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.SubjectTable;
 
@@ -22,7 +23,7 @@ public class ExamData implements DatabaseEntry {
 	private Long id;
 
 	@Column
-	@ForeignKey(table = SubjectTable.class)
+	@ForeignKey(table = SubjectTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
 	@Unique(1)
 	private Long subjectId;
 

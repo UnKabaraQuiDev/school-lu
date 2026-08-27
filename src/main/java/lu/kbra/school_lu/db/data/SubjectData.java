@@ -7,6 +7,7 @@ import lu.kbra.pclib.db.annotations.entry.ForeignKey;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
+import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.SectionTable;
 
@@ -23,13 +24,13 @@ public class SubjectData implements DatabaseEntry {
 	private Long id;
 
 	@Column
-	@ForeignKey(table = SectionTable.class)
+	@ForeignKey(table = SectionTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
 	@Unique(1)
 	private Long sectionId;
 
 	@Column
 	@Unique(1)
-	@MaxLength(150)
+	@MaxLength(48)
 	private String name;
 
 	public SubjectData(final Long id) {

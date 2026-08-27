@@ -4,6 +4,7 @@ import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
+import lu.kbra.pclib.db.annotations.entry.Nullable;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
@@ -16,7 +17,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ExerciseData implements DatabaseEntry {
+public class ExamAttachementData implements DatabaseEntry {
 
 	@Column
 	@PrimaryKey
@@ -24,30 +25,43 @@ public class ExerciseData implements DatabaseEntry {
 	private Long id;
 
 	@Column
+	@Unique
 	@ForeignKey(table = ExamTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
-	@Unique(1)
 	private Long examId;
 
 	@Column
-	@Unique(1)
-	private int exerciseIndex;
+	@Unique
+	@MaxLength(64)
+	private String qualifier;
 
 	@Column
-	@MaxLength(120)
-	private String image;
+	@Nullable
+	@MaxLength(128)
+	private String name;
 
-	public ExerciseData(final Long id) {
+	@Column
+	@Unique
+	private String location;
+
+	public ExamAttachementData(Long id) {
 		this.id = id;
 	}
 
-	public ExerciseData(final Long examId, final int exerciseIndex, final String image) {
+	public ExamAttachementData(Long examId, @MaxLength(64) String qualifier) {
 		this.examId = examId;
-		this.exerciseIndex = exerciseIndex;
-		this.image = image;
+		this.qualifier = qualifier;
+	}
+
+	public ExamAttachementData(Long examId, @MaxLength(64) String qualifier, @MaxLength(128) String name, String location) {
+		this.examId = examId;
+		this.qualifier = qualifier;
+		this.name = name;
+		this.location = location;
 	}
 
 	@Override
-	public ExerciseData clone() {
+	public ExamAttachementData clone() {
 		return PCUtils.safeClone(super::clone);
 	}
+
 }

@@ -22,7 +22,7 @@ public class SectionData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
-	@MaxLength(150)
+	@MaxLength(10)
 	private String name;
 
 	public SectionData(final Long id) {
