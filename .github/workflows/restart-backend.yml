@@ -1,9 +1,6 @@
 name: Restart Backend
 
 on:
-  push:
-    branches:
-      - backend
   workflow_dispatch:
   workflow_run:
     workflows: ["Deploy Backend"]
