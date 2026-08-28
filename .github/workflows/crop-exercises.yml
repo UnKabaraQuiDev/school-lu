@@ -63,11 +63,15 @@ jobs:
     needs: check
     if: needs.check.outputs.should_run == 'true'
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: main
+          depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
