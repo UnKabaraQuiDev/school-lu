@@ -6,7 +6,6 @@ import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
-import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.db.table.ExamTable;
@@ -32,18 +31,13 @@ public class ExerciseData implements DatabaseEntry {
 	@Unique(1)
 	private int exerciseIndex;
 
-	@Column
-	@MaxLength(120)
-	private String image;
-
 	public ExerciseData(final Long id) {
 		this.id = id;
 	}
 
-	public ExerciseData(final Long examId, final int exerciseIndex, final String image) {
+	public ExerciseData(final Long examId, final int exerciseIndex) {
 		this.examId = examId;
 		this.exerciseIndex = exerciseIndex;
-		this.image = image;
 	}
 
 	@Override
