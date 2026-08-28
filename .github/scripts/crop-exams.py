@@ -7,6 +7,9 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+import argparse
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pymupdf
 
@@ -119,6 +122,226 @@ def find_pdfs() -> list[Path]:
         result.append(path)
 
     return sorted(result, key=lambda p: str(p).lower())
+
+def find_headless_jobs() -> list[tuple[Path, Path]]:
+    """
+    Find every directory containing an index.csv.
+
+    Each index.csv is expected to belong to a PDF with the same
+    stem as its parent directory.
+
+    Example:
+
+        exams/math/exam.pdf
+        exams/math/exam/index.csv
+
+    becomes:
+
+        (exams/math/exam.pdf, exams/math/exam/index.csv)
+    """
+    jobs: list[tuple[Path, Path]] = []
+
+    for index_path in EXAMS_DIR.rglob("index.csv"):
+        if not index_path.is_file():
+            continue
+
+        if is_hidden_path(index_path):
+            continue
+
+        output_dir = index_path.parent
+        pdf_path = output_dir.with_suffix(".pdf")
+
+        if not pdf_path.is_file():
+            print(
+                f"[WARNING] No matching PDF for {index_path}: "
+                f"expected {pdf_path}",
+                flush=True,
+            )
+            continue
+
+        jobs.append((pdf_path, index_path))
+
+    return sorted(
+        jobs,
+        key=lambda job: str(job[0]).lower(),
+    )
+
+
+def export_pdf_headless(
+    pdf_path: Path,
+    index_path: Path,
+) -> None:
+    """
+    Export one indexed PDF without using the GUI.
+
+    This deliberately reuses the existing export functions.
+    """
+    print(
+        f"[INFO] Starting: {pdf_path}",
+        flush=True,
+    )
+
+    boxes = load_boxes(pdf_path)
+
+    if not boxes:
+        print(
+            f"[WARNING] No boxes found in {index_path}",
+            flush=True,
+        )
+
+    output_dir = clear_output_directory(pdf_path)
+
+    # Keep the existing index file format and normalization.
+    save_index(pdf_path, boxes)
+
+    doc = None
+
+    try:
+        doc = pymupdf.open(pdf_path)
+
+        page_infos = []
+
+        y = 0.0
+        gap = 20.0
+
+        for page_number in range(len(doc)):
+            page = doc[page_number]
+
+            page_infos.append(
+                {
+                    "number": page_number,
+                    "x": 0.0,
+                    "y": y,
+                    "width": page.rect.width,
+                    "height": page.rect.height,
+                }
+            )
+
+            y += page.rect.height + gap
+
+        for number, box in enumerate(boxes, start=1):
+            output_path = output_dir / f"{box.index}.webp"
+
+            print(
+                f"[INFO]   {pdf_path.name}: "
+                f"box {number}/{len(boxes)} "
+                f"{box.index}: {box.name}",
+                flush=True,
+            )
+
+            export_box(
+                doc=doc,
+                page_infos=page_infos,
+                box=box,
+                output_path=output_path,
+            )
+
+    finally:
+        if doc is not None:
+            doc.close()
+
+    print(
+        f"[INFO] Finished: {pdf_path}",
+        flush=True,
+    )
+
+
+def run_headless(
+    max_workers: int | None = None,
+) -> int:
+    """
+    Export every indexed PDF concurrently.
+
+    All jobs are allowed to finish, even if one or more jobs fail.
+    Returns 0 on success and 1 if at least one job failed.
+    """
+    if not EXAMS_DIR.exists():
+        print(
+            f"[ERROR] EXAMS_DIR does not exist: {EXAMS_DIR}",
+            flush=True,
+        )
+        return 1
+
+    jobs = find_headless_jobs()
+
+    if not jobs:
+        print(
+            f"[WARNING] No index.csv files found under {EXAMS_DIR}",
+            flush=True,
+        )
+        return 0
+
+    if max_workers is None:
+        max_workers = min(
+            8,
+            max(1, os.cpu_count() or 1),
+        )
+
+    print(
+        f"[INFO] Found {len(jobs)} indexed PDF(s)",
+        flush=True,
+    )
+
+    print(
+        f"[INFO] Using {max_workers} worker(s)",
+        flush=True,
+    )
+
+    failures: list[tuple[Path, Exception]] = []
+
+    with ThreadPoolExecutor(
+        max_workers=max_workers,
+        thread_name_prefix="pdf-export",
+    ) as executor:
+        futures = {
+            executor.submit(
+                export_pdf_headless,
+                pdf_path,
+                index_path,
+            ): pdf_path
+            for pdf_path, index_path in jobs
+        }
+
+        # Iterate over every future. Exceptions are collected rather
+        # than stopping the batch.
+        for future in as_completed(futures):
+            pdf_path = futures[future]
+
+            try:
+                future.result()
+
+            except Exception as exc:
+                failures.append((pdf_path, exc))
+
+                print(
+                    f"[ERROR] Failed: {pdf_path}: {exc}",
+                    flush=True,
+                )
+
+    print(
+        (
+            f"[INFO] Batch finished: "
+            f"{len(jobs) - len(failures)} succeeded, "
+            f"{len(failures)} failed"
+        ),
+        flush=True,
+    )
+
+    if failures:
+        print(
+            "[ERROR] Failed files:",
+            flush=True,
+        )
+
+        for pdf_path, exc in failures:
+            print(
+                f"[ERROR]   {pdf_path}: {exc}",
+                flush=True,
+            )
+
+        return 1
+
+    return 0
 
 
 def output_dir_for(pdf_path: Path) -> Path:
@@ -2908,13 +3131,63 @@ def export_box(
     )
 
     if horizontal_cuts or vertical_cuts:
+        painter = QPainter(output)
+
+        painter.setRenderHint(
+            QPainter.RenderHint.Antialiasing
+        )
+
+        pen = QPen(
+            Qt.GlobalColor.magenta,
+        )
+        pen.setStyle(
+            Qt.PenStyle.DashLine
+        )
+        pen.setWidthF(2.0)
+
+        painter.setPen(pen)
+
+        # Horizontal cuts.
+        for start, end in horizontal_cuts:
+            y = start
+
+            painter.drawLine(
+                QPointF(0, y),
+                QPointF(output.width(), y),
+            )
+
+        # Vertical cuts.
+        for start, end in vertical_cuts:
+            x = start
+
+            painter.drawLine(
+                QPointF(x, 0),
+                QPointF(x, output.height()),
+            )
+
+        painter.end()
+        
         output = crop_removed_strips(
             output,
             horizontal_cuts,
             vertical_cuts,
         )
 
-    if not output.save(
+    # Save a clean image with no metadata.
+    #
+    # Converting to a fresh QImage ensures that no metadata from
+    # the source PDF/rendering pipeline is carried into the WebP.
+    clean_output = QImage(
+        output.size(),
+        QImage.Format.Format_RGBA8888,
+    )
+    clean_output.fill(Qt.GlobalColor.transparent)
+
+    clean_painter = QPainter(clean_output)
+    clean_painter.drawImage(0, 0, output)
+    clean_painter.end()
+
+    if not clean_output.save(
         str(output_path),
         "WEBP",
         95,
@@ -2925,19 +3198,72 @@ def export_box(
         )
 
 def main() -> int:
-    app = QApplication(sys.argv)
+    parser = argparse.ArgumentParser(
+        description="Exam PDF Box Exporter",
+    )
+
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help=(
+            "Re-export every PDF that has an index.csv "
+            "without opening the GUI."
+        ),
+    )
+
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=None,
+        help=(
+            "Number of parallel export workers in headless mode. "
+            "Defaults to min(8, CPU count)."
+        ),
+    )
+
+    args = parser.parse_args()
+
+    if args.workers is not None and args.workers < 1:
+        parser.error("--workers must be at least 1")
 
     if not EXAMS_DIR.exists():
-        QMessageBox.critical(
-            None,
-            "Invalid exams directory",
-            (
-                "EXAMS_DIR does not exist:"
-                f"\n\n{EXAMS_DIR}"
-            ),
-        )
+        if args.headless:
+            print(
+                f"[ERROR] EXAMS_DIR does not exist: {EXAMS_DIR}",
+                flush=True,
+            )
+        else:
+            # QApplication is needed before showing the message box.
+            app = QApplication(sys.argv)
+
+            QMessageBox.critical(
+                None,
+                "Invalid exams directory",
+                (
+                    "EXAMS_DIR does not exist:"
+                    f"\n\n{EXAMS_DIR}"
+                ),
+            )
 
         return 1
+
+    if args.headless:
+        # Qt is still needed because the existing export code uses
+        # QImage, QPainter and other Qt classes. No window is created.
+        os.environ.setdefault(
+            "QT_QPA_PLATFORM",
+            "offscreen",
+        )
+
+        app = QApplication(sys.argv)
+
+        # Keep the application alive while worker threads use Qt
+        # image classes. QApplication does not create any GUI window.
+        return run_headless(
+            max_workers=args.workers,
+        )
+
+    app = QApplication(sys.argv)
 
     window = MainWindow()
     window.show()
