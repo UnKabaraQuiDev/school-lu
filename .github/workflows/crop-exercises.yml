@@ -82,7 +82,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python .github/scripts/crop-exams.py --headless --workers 4
+          python .github/scripts/crop-exams.py --headless --workers 1
 
       - name: Configure Git
         run: |
