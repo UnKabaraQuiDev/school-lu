@@ -14,6 +14,8 @@ import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.data.UserId;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,15 +30,19 @@ public class UserData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
+	@NotBlank
 	@MaxLength(100)
 	private String username;
 
 	@Column
 	@Unique(2)
+	@NotBlank
+	@Email
 	@MaxLength(320)
 	private String email;
 
 	@Column
+	@NotBlank
 	@MaxLength(255)
 	private String passwordHash;
 

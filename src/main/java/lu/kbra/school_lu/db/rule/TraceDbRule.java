@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Order(5)
 @Profile("debug")
-public class TraceDbHook implements BeforeRule {
+public class TraceDbRule implements BeforeRule {
 
 	private static final int longest = Arrays.stream(RuleHookType.values())
 			.mapToInt(hookType -> hookType.name().substring(hookType.name().indexOf("_") + 1).length())
@@ -27,7 +27,7 @@ public class TraceDbHook implements BeforeRule {
 
 	@Override
 	public void executeBefore(final RuleHookType hookType, final SQLQueryable<?> queryable, final Statement pstmt, final Object data) {
-		TraceDbHook.log.info(PCUtils.rightPadString(hookType.name().substring(hookType.name().indexOf("_") + 1), " ", longest) + " | "
+		TraceDbRule.log.info(PCUtils.rightPadString(hookType.name().substring(hookType.name().indexOf("_") + 1), " ", longest) + " | "
 				+ PCUtils.getStatementAsSQL(pstmt));
 	}
 
