@@ -22,14 +22,14 @@ jobs:
           fetch-depth: 1
           ref: main 
 
-      - name: Generate exam index
-        run: |
-          python .github/scripts/index-exams.py
-
       - name: Configure Git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+
+      - name: Generate exam index
+        run: |
+          python .github/scripts/index-exams.py
 
       - name: Commit & Push changes
         run: |
@@ -38,6 +38,21 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "ci: Sync exams index"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Generate exercise index
+        run: |
+          python .github/scripts/index-exercises.py
+
+      - name: Commit & Push changes
+        run: |
+          git add exams/db.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "ci: Sync exercises index"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
