@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QProgressBar,
+    QCheckBox,
 )
 
 GIT_DIR = Path(
@@ -1647,6 +1648,11 @@ class MainWindow(QMainWindow):
         self.delete_button = QPushButton(
             "Delete selected box"
         )
+        
+        self.only_export_data_checkbox = QCheckBox(
+            "Only export data"
+        )
+        self.only_export_data_checkbox.setChecked(True)
 
         self.delete_button.clicked.connect(
             self.delete_selected_box
@@ -1730,6 +1736,10 @@ class MainWindow(QMainWindow):
         )
 
         controls.addStretch()
+        
+        controls.addWidget(
+            self.only_export_data_checkbox
+        )
 
         controls.addWidget(
             self.cancel_button
@@ -2605,6 +2615,13 @@ class MainWindow(QMainWindow):
             pdf_path,
             boxes,
         )
+
+        only_export_data = (
+            self.only_export_data_checkbox.isChecked()
+        )
+        
+        if only_export_data:
+            return
 
         doc = pymupdf.open(pdf_path)
 
