@@ -76,27 +76,7 @@ jobs:
         with:
           lfs: true
           ref: main
-          depth: 1
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgl1 \
-            libegl1 \
-            libxkbcommon0
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install \
-            PyMuPDF \
-            PySide6
+          fetch-depth: 1
 
       - name: Export exam images
         env:
