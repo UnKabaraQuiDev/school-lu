@@ -273,10 +273,11 @@ def run_headless(
         return 0
 
     if max_workers is None:
-        max_workers = min(
-            8,
-            max(1, os.cpu_count() or 1),
-        )
+        max_workers = 1
+        # min(
+        #     8,
+        #     max(1, os.cpu_count() or 1),
+        # )
 
     print(
         f"[INFO] Found {len(jobs)} indexed PDF(s)",
