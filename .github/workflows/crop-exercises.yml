@@ -91,7 +91,7 @@ jobs:
 
       - name: Commit & Push changes
         run: |
-          git add exams/exercises.csv
+          git add exams/
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
