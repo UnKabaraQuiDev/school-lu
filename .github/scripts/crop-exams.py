@@ -31,7 +31,6 @@ from PySide6.QtWidgets import (
     QProgressBar,
 )
 
-
 GIT_DIR = Path(
     subprocess.check_output(
         [
@@ -1148,7 +1147,7 @@ class PdfCanvas(QWidget):
 
         box = Box(
             index=next_index,
-            name=f"Box {next_index}",
+            name=f"Question {next_index}",
             x=rect.x(),
             y=rect.y(),
             width=rect.width(),
@@ -2009,30 +2008,31 @@ class MainWindow(QMainWindow):
                     "Unsaved changes",
                     (
                         "There are unsaved changes. "
-                        "Discard them?"
+                        "Save them?"
                     ),
                     QMessageBox.StandardButton.Yes
-                    | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
+                    | QMessageBox.StandardButton.No
+                    | QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Yes,
                 )
 
-                if (
-                    answer
-                    != QMessageBox.StandardButton.Yes
-                ):
-                    self.file_list.blockSignals(
-                        True
-                    )
+                if answer == QMessageBox.StandardButton.Cancel:
+                    self.file_list.blockSignals(True)
 
                     self.file_list.setCurrentRow(
                         self.current_index
                     )
 
-                    self.file_list.blockSignals(
-                        False
-                    )
+                    self.file_list.blockSignals(False)
 
                     return
+
+                if answer == QMessageBox.StandardButton.Yes:
+                    self.save_current()
+
+                elif answer == QMessageBox.StandardButton.No:
+                    # Continue opening the new file without saving.
+                    pass
 
         self.current_index = index
         self.current_pdf = path
@@ -2321,6 +2321,8 @@ class MainWindow(QMainWindow):
         if self.current_pdf is None:
             return
 
+        saved_index = self.current_index
+
         try:
             self.progress_bar.setVisible(True)
             self.progress_bar.setMinimum(0)
@@ -2335,7 +2337,6 @@ class MainWindow(QMainWindow):
                 self.current_pdf,
                 self.canvas.boxes,
             )
-
         except Exception as exc:
             QMessageBox.critical(
                 self,
@@ -2346,22 +2347,27 @@ class MainWindow(QMainWindow):
                 ),
             )
             return
-
         finally:
             self.progress_bar.setVisible(False)
 
         self.refresh_file_list()
-        self.update_status()
 
-        QMessageBox.information(
-            self,
-            "Saved",
-            (
-                f"Saved "
-                f"{len(self.canvas.boxes)} "
-                "box(es)."
-            ),
-        )
+        # Restore the previously selected file.
+        self.current_index = saved_index
+
+        self.file_list.blockSignals(True)
+
+        if (
+            0 <= saved_index
+            < self.file_list.count()
+        ):
+            self.file_list.setCurrentRow(
+                saved_index
+            )
+
+        self.file_list.blockSignals(False)
+
+        self.update_status()
 
     def export_pdf(
         self,
