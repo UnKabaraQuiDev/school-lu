@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pymupdf
 
 from PySide6.QtCore import QPoint, QRectF, QSize, Qt, QPointF
-from PySide6.QtGui import QColor, QImage, QPainter, QPen, QKeySequence
+from PySide6.QtGui import QColor, QImage, QPainter, QPen, QImageWriter
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -3225,6 +3225,15 @@ def main() -> int:
 
     if args.workers is not None and args.workers < 1:
         parser.error("--workers must be at least 1")
+
+    print(
+        "Supported image formats:",
+        [
+            bytes(fmt).decode("ascii", errors="replace")
+            for fmt in QImageWriter.supportedImageFormats()
+        ],
+        flush=True,
+    )
 
     if not EXAMS_DIR.exists():
         if args.headless:
