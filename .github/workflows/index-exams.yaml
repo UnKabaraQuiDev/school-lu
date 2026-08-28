@@ -1,4 +1,4 @@
-name: Generate Exam Index
+name: Generate Exam & Exercises Index
 
 on:
   push:
