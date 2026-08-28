@@ -14,10 +14,16 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ vars.BACKEND_HOST }}
+          host: ${{ secrets.BACKEND_HOST }}
           port: ${{ secrets.BACKEND_PORT }}
           username: ${{ secrets.BACKEND_USER }}
           key: ${{ secrets.BACKEND_SSH_KEY }}
+
+          proxy_host: ${{ secrets.PROXY_HOST }}
+          proxy_port: ${{ secrets.PROXY_PORT }}
+          proxy_username: ${{ secrets.PROXY_USER }}
+          proxy_key: ${{ secrets.PROXY_SSH_KEY }}
+          
           script: |
             set -e
 
