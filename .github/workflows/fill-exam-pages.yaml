@@ -5,7 +5,7 @@ on:
     branches:
       - pages
   workflow_run:
-    workflows: ["Generate Exam Index"]
+    workflows: ["Generate Exam & Exercises Index"]
     types: [completed]
   workflow_dispatch:
 
