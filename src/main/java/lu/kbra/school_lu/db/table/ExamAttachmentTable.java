@@ -4,12 +4,12 @@ import org.springframework.stereotype.Component;
 
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
-import lu.kbra.school_lu.db.data.ExamAttachementData;
+import lu.kbra.school_lu.db.data.ExamAttachmentData;
 
 @Component
-public abstract class ExamAttachementTable extends DeferredDatabaseTable<ExamAttachementData> {
+public abstract class ExamAttachmentTable extends DeferredDatabaseTable<ExamAttachmentData> {
 
-	public ExamAttachementTable(final DeferredDatabase database) {
+	public ExamAttachmentTable(final DeferredDatabase database) {
 		super(database);
 	}
 
