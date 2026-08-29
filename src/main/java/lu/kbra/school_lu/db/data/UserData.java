@@ -65,6 +65,10 @@ public class UserData implements DatabaseEntry {
 		this.id = id;
 	}
 
+	public UserData(String email) {
+		this.email = email;
+	}
+
 	public UserData(final String username, final String email, final String passwordHash) {
 		this.username = username;
 		this.email = email;
