@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title data-i18n="examTools.title">Exam Tools</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/css.js"></script>
+    <script src="/js/i18n.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/upload-exams.js"></script>
+</head>
+
+<body>
+    <div class="min-h-screen bg-gray-50 px-4 py-10">
+        <div class="mx-auto max-w-2xl">
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-semibold text-gray-900" data-i18n="updateIndex.title">
+                        Update exam database
+                    </h1>
+                </div>
+
+                <form id="update-index-form" class="space-y-6">
+
+                    <!-- CSV file -->
+                    <div>
+                        <label for="csv-file" class="block text-sm font-medium text-gray-700"
+                            data-i18n="updateIndex.csvFile">
+                            CSV file
+                        </label>
+
+                        <div class="mt-2">
+                            <input id="csv-file" name="file" type="file" accept=".csv,text/csv" required class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-900
+                                   file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2
+                                   file:text-sm file:font-medium
+                                   hover:file:bg-gray-200
+                                   focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        </div>
+
+                        <p class="mt-1 text-xs text-gray-500" data-i18n="updateIndex.csvHint">
+                            Select a CSV file containing the exam data.
+                        </p>
+                    </div>
+
+                    <!-- Permissions -->
+                    <div class="space-y-4">
+                        <h2 class="text-sm font-medium text-gray-900" data-i18n="updateIndex.permissions">
+                            Permissions
+                        </h2>
+
+                        <label class="flex cursor-pointer items-start gap-3">
+                            <input id="allow-section-creation" name="allowSectionCreation" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600
+                                   focus:ring-2 focus:ring-indigo-500">
+
+                            <span class="text-sm font-medium text-gray-700"
+                                data-i18n="updateIndex.allowSectionCreation">
+                                Allow section creation
+                            </span>
+                        </label>
+
+                        <label class="flex cursor-pointer items-start gap-3">
+                            <input id="allow-subject-creation" name="allowSubjectCreation" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600
+                                   focus:ring-2 focus:ring-indigo-500">
+
+                            <span class="text-sm font-medium text-gray-700"
+                                data-i18n="updateIndex.allowSubjectCreation">
+                                Allow subject creation
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Progress -->
+                    <div id="progress-container" class="hidden">
+                        <div class="mb-2 flex items-center justify-between">
+                            <span id="progress-status" class="text-sm font-medium text-gray-700"
+                                data-i18n="updateIndex.processing">
+                                Processing...
+                            </span>
+
+                            <span id="progress-value" class="text-sm text-gray-500">
+                                0%
+                            </span>
+                        </div>
+
+                        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                            <div id="progress-bar" class="h-full rounded-full bg-indigo-600 transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+
+                        <p id="progress-message" class="mt-2 text-xs text-gray-500"></p>
+                    </div>
+
+                    <!-- Error -->
+                    <div id="error-message"
+                        class="hidden rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+                    </div>
+
+                    <!-- Success -->
+                    <div id="success-message"
+                        class="hidden rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+                        role="status"></div>
+
+                    <!-- Submit -->
+                    <div class="flex justify-end">
+                        <button id="submit-button" type="submit" class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2.5
+                               text-sm font-medium text-white shadow-sm
+                               hover:bg-indigo-700
+                               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+                               disabled:cursor-not-allowed disabled:opacity-50" data-i18n="updateIndex.submit">
+                            Update index
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

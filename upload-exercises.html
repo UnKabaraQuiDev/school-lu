@@ -11,7 +11,7 @@
     <script src="/js/css.js"></script>
     <script src="/js/i18n.js"></script>
     <script src="/js/api.js"></script>
-    <script src="/js/upload.js"></script>
+    <script src="/js/upload-exercises.js"></script>
 </head>
 
 <body>
@@ -20,7 +20,7 @@
             <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
                 <div class="mb-6">
                     <h1 class="text-2xl font-semibold text-gray-900" data-i18n="updateIndex.title">
-                        Update exam database
+                        Update exercises database
                     </h1>
                 </div>
 
@@ -42,7 +42,7 @@
                         </div>
 
                         <p class="mt-1 text-xs text-gray-500" data-i18n="updateIndex.csvHint">
-                            Select a CSV file containing the exam data.
+                            Select a CSV file containing the exercise data.
                         </p>
                     </div>
 
@@ -69,6 +69,26 @@
                             <span class="text-sm font-medium text-gray-700"
                                 data-i18n="updateIndex.allowSubjectCreation">
                                 Allow subject creation
+                            </span>
+                        </label>
+
+                        <label class="flex cursor-pointer items-start gap-3">
+                            <input id="allow-exam-creation" name="allowExamCreation" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600
+                                   focus:ring-2 focus:ring-indigo-500">
+
+                            <span class="text-sm font-medium text-gray-700"
+                                data-i18n="updateIndex.allowExamCreation">
+                                Allow exam creation
+                            </span>
+                        </label>
+
+                        <label class="flex cursor-pointer items-start gap-3">
+                            <input id="allow-exam-attachment-creation" name="allowExamAttachementCreation" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600
+                                   focus:ring-2 focus:ring-indigo-500">
+
+                            <span class="text-sm font-medium text-gray-700"
+                                data-i18n="updateIndex.allowExamAttachementCreation">
+                                Allow exam attachment creation
                             </span>
                         </label>
                     </div>

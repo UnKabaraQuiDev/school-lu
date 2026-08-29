@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         );
 
         try {
-            const response = await fetch(apiUrl("exam-db/update-index"), {
+            const response = await fetch(apiUrl("exam-db/exams/update-index"), {
                 method: "POST",
                 headers: {
                     [csrf.headerName]: csrf.token
