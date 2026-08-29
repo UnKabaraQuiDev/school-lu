@@ -16,6 +16,9 @@ public enum UserPermissionType {
 	EDIT_SUBJECT,
 
 	MANAGE_TAG,
-	EDIT_TAG;
+	EDIT_TAG,
+
+	MANAGE_EXERCISE,
+	EDIT_EXERCISE;
 
 }

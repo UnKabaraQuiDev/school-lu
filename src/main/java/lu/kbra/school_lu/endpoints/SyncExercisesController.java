@@ -1,5 +1,6 @@
 package lu.kbra.school_lu.endpoints;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -9,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -28,50 +31,59 @@ import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
 import lu.kbra.school_lu.db.data.ExamData;
+import lu.kbra.school_lu.db.data.ExerciseAttachmentData;
+import lu.kbra.school_lu.db.data.ExerciseData;
 import lu.kbra.school_lu.db.data.SectionData;
 import lu.kbra.school_lu.db.data.SubjectData;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExamTable;
+import lu.kbra.school_lu.db.table.ExerciseAttachmentTable;
+import lu.kbra.school_lu.db.table.ExerciseTable;
 import lu.kbra.school_lu.db.table.SectionTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
 import lu.kbra.school_lu.service.UserPermissionService;
 
 @RestController
-public class SyncExamsController {
+public class SyncExercisesController {
 
 	private final SectionTable sectionTable;
 	private final SubjectTable subjectTable;
 	private final ExamTable examTable;
 	private final ExamAttachmentTable examAttachmentTable;
+	private final ExerciseTable exerciseTable;
+	private final ExerciseAttachmentTable exerciseAttachmentTable;
 	private final UserPermissionService userPermissionService;
 	private final Executor executor;
 
-	public SyncExamsController(
+	public SyncExercisesController(
 			final SectionTable sectionTable,
 			final SubjectTable subjectTable,
 			final ExamTable examTable,
 			final ExamAttachmentTable examAttachmentTable,
+			final ExerciseTable exerciseTable,
+			final ExerciseAttachmentTable exerciseAttachmentTable,
 			final UserPermissionService userPermissionService,
 			@Qualifier("applicationTaskExecutor") final Executor executor) {
 		this.sectionTable = sectionTable;
 		this.subjectTable = subjectTable;
 		this.examTable = examTable;
 		this.examAttachmentTable = examAttachmentTable;
+		this.exerciseTable = exerciseTable;
+		this.exerciseAttachmentTable = exerciseAttachmentTable;
 		this.userPermissionService = userPermissionService;
 		this.executor = executor;
 	}
 
-	@PostMapping("/exam-db/exams/update-index")
+	@PostMapping("/exam-db/exercises/update-index")
 	public SseEmitter updateIndex(
 			@AuthenticationPrincipal final UserId userId,
 			@RequestParam final MultipartFile file,
 			@RequestParam final boolean allowSectionCreation,
-			@RequestParam final boolean allowSubjectCreation) {
+			@RequestParam final boolean allowSubjectCreation,
+			@RequestParam final boolean allowExamCreation,
+			@RequestParam final boolean allowExamAttachmentCreation) {
 
-		this.userPermissionService.requireAllPermissions(userId,
-				UserPermissionType.MANAGE_EXAM,
-				UserPermissionType.MANAGE_SECTION,
-				UserPermissionType.MANAGE_SUBJECT);
+		this.userPermissionService.requireAllPermissions(userId, UserPermissionType.MANAGE_EXERCISE);
 
 		final SseEmitter emitter = new SseEmitter(0L);
 
@@ -100,8 +112,18 @@ public class SyncExamsController {
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
 
-				final Set<String> requiredHeaders = Set
-						.of("Section", "Subject", "Year", "Season", "Retry", "Name", "Mission statement", "Solution", "Data", "Oral");
+				final Set<String> requiredHeaders = Set.of("Section",
+						"Subject",
+						"Year",
+						"Retry",
+						"Season",
+						"Source",
+						"Exercise Index",
+						"Qualifier",
+						"Alternative Index",
+						"Additive box",
+						"Subtractive boxes",
+						"Attachment");
 
 				final Set<String> headers = new HashSet<>(parser.getHeaderNames());
 
@@ -127,6 +149,24 @@ public class SyncExamsController {
 				final Map<String, SectionData> sectionDatas = new HashMap<>();
 				final Map<String, Map<String, SubjectData>> subjectDatas = new HashMap<>();
 
+				final Pattern rectanglePattern = Pattern.compile(
+						"\\(\\(\\s*([+-]?\\d*\\.?\\d+)\\s*,\\s*([+-]?\\d*\\.?\\d+)\\s*\\),\\s*\\(\\s*([+-]?\\d*\\.?\\d+)\\s*,\\s*([+-]?\\d*\\.?\\d+)\\s*\\)\\)");
+
+				final Function<String, Rectangle2D.Float> parseRectangle = value -> {
+					final Matcher matcher = rectanglePattern.matcher(value.trim());
+
+					if (!matcher.matches()) {
+						throw new IllegalArgumentException("Invalid rectangle: " + value);
+					}
+
+					final float x1 = Float.parseFloat(matcher.group(1));
+					final float y1 = Float.parseFloat(matcher.group(2));
+					final float x2 = Float.parseFloat(matcher.group(3));
+					final float y2 = Float.parseFloat(matcher.group(4));
+
+					return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+				};
+
 				int index = 0;
 				for (final CSVRecord record : records) {
 					index++;
@@ -136,23 +176,33 @@ public class SyncExamsController {
 					final int year = Integer.parseInt(record.get("Year"));
 					final int season = PCUtils.parseInteger(record.get("Season"),
 							() -> "SEPT".equalsIgnoreCase(record.get("Season")) ? 9 : 6);
-					final boolean retry = PCUtils.parseBoolean(record.get("Retry"),
-							() -> "YES".equalsIgnoreCase(record.get("Retry")) == true);
-					final String name = PCUtils.nullIfBlank(record.get("Name"));
-					final String statement = PCUtils.nullIfBlank(record.get("Mission statement"));
-					final String solution = PCUtils.nullIfBlank(record.get("Solution"));
-					final String data = PCUtils.nullIfBlank(record.get("Data"));
-					final String oral = PCUtils.nullIfBlank(record.get("Oral"));
+					final boolean retry = PCUtils.parseBoolean(record.get("Retry"), () -> "YES".equalsIgnoreCase(record.get("Retry")));
 
-					if (statement == null && solution == null && data == null && oral == null) {
+					final String source = PCUtils.nullIfBlank(record.get("Source"));
+					final int exerciseIndex = Integer.parseInt(record.get("Exercise Index"));
+					final String qualifier = PCUtils.nullIfBlank(record.get("Qualifier"));
+					final int alternativeIndex = Integer.parseInt(record.get("Alternative Index"));
+					final String additiveBox = PCUtils.nullIfBlank(record.get("Additive box"));
+					final String subtractiveBoxes = PCUtils.nullIfBlank(record.get("Subtractive boxes"));
+					final String attachment = record.get("Attachment");
+
+					if (source == null) {
 						emitter.send(
-								SseEmitter.event().name("warning").data("Exam with no attachments: " + Arrays.toString(record.values())));
+								SseEmitter.event().name("warning").data("Exercise with no source: " + Arrays.toString(record.values())));
+						continue;
+					}
+
+					if (additiveBox == null) {
+						emitter.send(SseEmitter.event()
+								.name("warning")
+								.data("Exercise with no additive box: " + Arrays.toString(record.values())));
 						continue;
 					}
 
 					final SectionData sectionData;
 					final SubjectData subjectData;
 					final ExamData examData;
+					final ExamAttachmentData examAttachment;
 
 					try {
 						sectionData = sectionDatas.computeIfAbsent(section,
@@ -174,23 +224,53 @@ public class SyncExamsController {
 						continue;
 					}
 
-					examData = this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, retry));
+					try {
+						examData = allowExamCreation
+								? this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, retry))
+								: this.examTable.loadUnique(new ExamData(subjectData.getId(), year, season, retry));
+					} catch (final NoMatchingRowException e) {
+						emitter.send(SseEmitter.event().name("warning").data("Subject not found: " + subject));
+						continue;
+					}
 
-					final BiConsumer<String, String> storeAttachment = (qualifier, path) -> {
-						if (path == null) {
-							return;
+					try {
+						examAttachment = allowExamCreation
+								? this.examAttachmentTable
+										.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examData.getId(), qualifier, null, source))
+								: this.examAttachmentTable.loadUnique(new ExamAttachmentData(examData.getId(), qualifier, null, source));
+					} catch (final NoMatchingRowException e) {
+						emitter.send(SseEmitter.event().name("warning").data("Exam attachment not found: " + source));
+						continue;
+					}
+
+					final ExerciseData exerciseData = this.exerciseTable
+							.loadUniqueIfExistsElseInsert(new ExerciseData(examData.getId(), exerciseIndex));
+
+					final Rectangle2D.Float additiveRectangle = parseRectangle.apply(additiveBox);
+
+					final Rectangle2D.Float[] subtractiveRectangles;
+
+					if (subtractiveBoxes == null) {
+						subtractiveRectangles = null;
+					} else {
+						final String[] boxes = subtractiveBoxes.split(";");
+						subtractiveRectangles = new Rectangle2D.Float[boxes.length];
+						for (int i = 0; i < boxes.length; i++) {
+							subtractiveRectangles[i] = parseRectangle.apply(boxes[i]);
 						}
+					}
 
-						final ExamAttachmentData statementData = new ExamAttachmentData(examData.getId(), qualifier, name, path);
-						if (!this.examAttachmentTable.existsUnique(statementData)) {
-							this.examAttachmentTable.insertAndReload(statementData);
-						}
-					};
+					final ExerciseAttachmentData exerciseAttachment = new ExerciseAttachmentData(exerciseData.getId(),
+							qualifier,
+							alternativeIndex,
+							attachment,
+							examAttachment.getId(),
+							additiveRectangle,
+							subtractiveRectangles);
 
-					storeAttachment.accept("STATEMENT", statement);
-					storeAttachment.accept("SOLUTION", solution);
-					storeAttachment.accept("DATA", data);
-					storeAttachment.accept("ORAL", oral);
+					if (!this.exerciseAttachmentTable.existsUnique(exerciseAttachment)) {
+						this.exerciseAttachmentTable.insertAndReload(exerciseAttachment);
+					}
 
 					emitter.send(SseEmitter.event().name("progress").data(index + "/" + rowCount));
 				}

@@ -4,19 +4,20 @@ import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
+import lu.kbra.pclib.db.annotations.entry.Nullable;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
-import lu.kbra.school_lu.db.table.ExerciseTable;
+import lu.kbra.school_lu.db.table.ExamTable;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ExerciseAttachementData implements DatabaseEntry {
+public class ExamAttachmentData implements DatabaseEntry {
 
 	@Column
 	@PrimaryKey
@@ -25,8 +26,8 @@ public class ExerciseAttachementData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
-	@ForeignKey(table = ExerciseTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
-	private Long exerciseId;
+	@ForeignKey(table = ExamTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
+	private Long examId;
 
 	@Column
 	@Unique(1)
@@ -34,26 +35,36 @@ public class ExerciseAttachementData implements DatabaseEntry {
 	private String qualifier;
 
 	@Column
+	@Nullable
+	@MaxLength(128)
+	private String name;
+
+	@Column
 	@Unique(2)
 	private String location;
 
-	public ExerciseAttachementData(Long id) {
+	public ExamAttachmentData(Long id) {
 		this.id = id;
 	}
 
-	public ExerciseAttachementData(Long exerciseId, String qualifier) {
-		this.exerciseId = exerciseId;
+	public ExamAttachmentData(String location) {
+		this.location = location;
+	}
+
+	public ExamAttachmentData(Long examId, String qualifier) {
+		this.examId = examId;
 		this.qualifier = qualifier;
 	}
 
-	public ExerciseAttachementData(Long exerciseId, String qualifier, String location) {
-		this.exerciseId = exerciseId;
+	public ExamAttachmentData(Long examId, String qualifier, String name, String location) {
+		this.examId = examId;
 		this.qualifier = qualifier;
+		this.name = name;
 		this.location = location;
 	}
 
 	@Override
-	public ExerciseAttachementData clone() {
+	public ExamAttachmentData clone() {
 		return PCUtils.safeClone(super::clone);
 	}
 
