@@ -39,25 +39,66 @@ DIR_PATTERN = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
+EXERCISE_NUMBER_PATTERN = re.compile(r"\d+")
+ALTERNATIVE_PATTERN = re.compile(r"#(\d+)$")
+
 
 def rel(path: Path) -> str:
-    return path.relative_to(EXAMS_DIR).as_posix()
+    return path.relative_to(EXAMS_DIR.parent).as_posix()
 
 
-def read_index(path: Path) -> list[int]:
-    exercises = []
+def format_box(row: dict) -> str:
+    x1 = float(row["PosX"])
+    y1 = float(row["PosY"])
+    x2 = x1 + float(row["Width"])
+    y2 = y1 + float(row["Height"])
+
+    return f"(({x1:g}, {y1:g}), ({x2:g}, {y2:g}))"
+
+
+def read_boxes(path: Path) -> dict[int, list[dict]]:
+    boxes = defaultdict(list)
+
     with path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
+
         for row in reader:
             try:
-                idx = int(row["Index"])
+                index = int(row["Index"])
             except (ValueError, KeyError):
                 continue
 
-            if idx > 0:
-                exercises.append(idx)
+            boxes[index].append(row)
 
-    return exercises
+    return boxes
+
+
+def get_exercise_index(name: str, path: Path) -> int | None:
+    match = EXERCISE_NUMBER_PATTERN.search(name)
+
+    if not match:
+        print(
+            f"Warning: No exercise number found in box name "
+            f"{name!r} in {rel(path)}, skipping box"
+        )
+        return None
+
+    return int(match.group())
+
+
+def get_alternative_index(name: str) -> int:
+    match = ALTERNATIVE_PATTERN.search(name)
+    return int(match.group(1)) if match else 0
+
+
+def get_source(folder: Path) -> str:
+    pdf = folder.with_suffix(".pdf")
+
+    if not pdf.exists():
+        print(f"Warning: Missing source PDF: {rel(pdf)}")
+        return ""
+
+    return rel(pdf)
 
 
 def main():
@@ -66,11 +107,13 @@ def main():
     for index_csv in EXAMS_DIR.rglob("index.csv"):
         folder = index_csv.parent
         match = DIR_PATTERN.match(folder.name)
+
         if not match:
             print(f"Warning: Skipping unrecognized directory: {rel(folder)}")
             continue
 
         data = match.groupdict()
+
         key = (
             data["section"],
             data["subject"],
@@ -85,6 +128,7 @@ def main():
 
     with output.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
+
         writer.writerow(
             [
                 "Section",
@@ -92,71 +136,91 @@ def main():
                 "Year",
                 "Retry",
                 "Season",
+                "Source",
                 "Exercise Index",
-                "Mission Statement",
-                "Solution",
+                "Qualifier",
+                "Alternative Index",
+                "Additive box",
+                "Subtractive boxes",
+                "Attachment",
             ]
         )
 
         for (section, subject, year, season, retry), files in sorted(exams.items()):
-            statement_dir = files.get("ENONCE")
-            solution_dir = files.get("CORRIGE")
+            for document_type, folder in sorted(files.items()):
+                index_path = folder / "index.csv"
 
-            if statement_dir is None:
-                print(
-                    f"Warning: Missing statement folder for {section}/{subject} {year} {season}{'_REP' if retry else ''}"
-                )
-            if solution_dir is None:
-                print(
-                    f"Warning: Missing solution folder for {section}/{subject} {year} {season}{'_REP' if retry else ''}"
-                )
+                if not index_path.exists():
+                    print(f"Warning: Missing index.csv: {rel(index_path)}")
+                    continue
 
-            exercise_set = set()
+                boxes = read_boxes(index_path)
+                source = get_source(folder)
 
-            if statement_dir and (statement_dir / "index.csv").exists():
-                exercise_set.update(read_index(statement_dir / "index.csv"))
+                # Positive indexes are additive boxes.
+                # Negative indexes are subtractive boxes.
+                additive_boxes = {
+                    index: rows
+                    for index, rows in boxes.items()
+                    if index > 0
+                }
 
-            if solution_dir and (solution_dir / "index.csv").exists():
-                exercise_set.update(read_index(solution_dir / "index.csv"))
+                subtractive_boxes = {
+                    abs(index): rows
+                    for index, rows in boxes.items()
+                    if index < 0
+                }
 
-            for exercise in sorted(exercise_set):
-                statement_path = ""
-                solution_path = ""
+                row_count = 0
 
-                if statement_dir:
-                    candidate = statement_dir / f"{exercise}.webp"
-                    if candidate.exists():
-                        statement_path = rel(candidate)
-                    else:
-                        print(
-                            f"Warning: Missing statement for {section}/{subject} {year} {season} exercise {exercise}"
+                for box_index, additive_rows in sorted(additive_boxes.items()):
+                    for additive_row in additive_rows:
+                        name = additive_row["Name"]
+
+                        exercise_index = get_exercise_index(name, index_path)
+
+                        if exercise_index is None:
+                            continue
+
+                        alternative_index = get_alternative_index(name)
+
+                        subtractive = []
+
+                        for subtractive_row in subtractive_boxes.get(
+                            box_index, []
+                        ):
+                            subtractive.append(format_box(subtractive_row))
+
+                        additive_box = format_box(additive_row)
+                        subtractive_boxes_value = ";".join(subtractive)
+
+                        attachment_path = folder / f"{box_index}.webp"
+                        attachment = rel(attachment_path)
+
+                        writer.writerow(
+                            [
+                                section,
+                                subject,
+                                year,
+                                "Yes" if retry else "No",
+                                season,
+                                source,
+                                exercise_index,
+                                "STATEMENT" if document_type == "ENONCE" else "SOLUTION" if document_type == "CORRIGE" else "???",
+                                alternative_index,
+                                additive_box,
+                                subtractive_boxes_value,
+                                attachment,
+                            ]
                         )
 
-                if solution_dir:
-                    candidate = solution_dir / f"{exercise}.webp"
-                    if candidate.exists():
-                        solution_path = rel(candidate)
-                    else:
-                        print(
-                            f"Warning: Missing solution for {section}/{subject} {year} {season} exercise {exercise}"
-                        )
+                        row_count += 1
 
-                writer.writerow(
-                    [
-                        section,
-                        subject,
-                        year,
-                        "Yes" if retry else "No",
-                        season,
-                        exercise,
-                        statement_path,
-                        solution_path,
-                    ]
+                print(
+                    f"Info: Found {row_count} boxes for "
+                    f"{section}/{subject} {year} {season}"
+                    f"{'_REP' if retry else ''} {document_type}"
                 )
-                
-            print(
-                f"Info: Found {len(exercise_set)} for {section}/{subject} {year} {season}{'_REP' if retry else ''}"
-            )
 
     print(f"Wrote {output}")
 
