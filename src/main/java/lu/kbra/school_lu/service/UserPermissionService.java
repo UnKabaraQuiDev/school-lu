@@ -27,9 +27,8 @@ public class UserPermissionService {
 	private final UserPermissionTable userPermissionTable;
 
 	public EnumSet<UserPermissionType> getPermissions(final UserId id) {
-		return this.userPermissionTable.byUserId(id.id())
+		return this.userPermissionTable.permissionsByUserId(id.id())
 				.stream()
-				.map(UserPermissionData::getPermission)
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(UserPermissionType.class)));
 	}
 
@@ -54,19 +53,20 @@ public class UserPermissionService {
 		}
 	}
 
-	public void requireAnyPermission(UserId userId, UserPermissionType... manageExam) {
-		System.err.println("test");
+	public void requireAnyPermission(final UserId userId, final UserPermissionType... manageExam) {
 		final Set<UserPermissionType> perms = this.getPermissions(userId);
 		if (!Arrays.stream(manageExam).anyMatch(perms::contains)) {
-			log.info("Permission refused for user: " + userId + ", required any of: " + Arrays.toString(manageExam) + ", got: " + perms);
+			UserPermissionService.log.info(
+					"Permission refused for user: " + userId + ", required any of: " + Arrays.toString(manageExam) + ", got: " + perms);
 			throw new AccessDeniedException("Permission refused, required any of: " + Arrays.toString(manageExam) + ", got: " + perms);
 		}
 	}
 
-	public void requireAllPermissions(UserId userId, UserPermissionType... manageExam) {
+	public void requireAllPermissions(final UserId userId, final UserPermissionType... manageExam) {
 		final Set<UserPermissionType> perms = this.getPermissions(userId);
 		if (!Arrays.stream(manageExam).allMatch(perms::contains)) {
-			log.info("Permission refused for user: " + userId + ", required all of: " + Arrays.toString(manageExam) + ", got: " + perms);
+			UserPermissionService.log.info(
+					"Permission refused for user: " + userId + ", required all of: " + Arrays.toString(manageExam) + ", got: " + perms);
 			throw new AccessDeniedException("Permission refused, required all of: " + Arrays.toString(manageExam) + ", got: " + perms);
 		}
 	}

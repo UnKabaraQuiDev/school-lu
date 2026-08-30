@@ -8,6 +8,7 @@ import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
+import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.UserPermissionData;
 
 @Component
@@ -16,6 +17,9 @@ public abstract class UserPermissionTable extends DeferredDatabaseTable<UserPerm
 	public UserPermissionTable(final DeferredDatabase database) {
 		super(database);
 	}
+
+	@Query(retColumns = { "{M:permission}" })
+	public abstract List<UserPermissionType> permissionsByUserId(@Param final long userId);
 
 	@Query
 	public abstract List<UserPermissionData> byUserId(@Param final long userId);
