@@ -68,6 +68,10 @@
 			<artifactId>commons-csv</artifactId>
 			<version>1.14.1</version>
 		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>lu.kbra</groupId>

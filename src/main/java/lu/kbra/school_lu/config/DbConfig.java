@@ -38,8 +38,7 @@ public class DbConfig {
 	}
 
 	@Bean
-	@Order(5)
-	@Profile("debug")
+	@Order(1)
 	ValidationRule validationDbRule(TableValidatorFactory tvf) {
 		return new ValidationRule(tvf);
 	}
