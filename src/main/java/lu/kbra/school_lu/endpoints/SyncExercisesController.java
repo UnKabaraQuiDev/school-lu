@@ -27,6 +27,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
+import lu.kbra.school_lu.data.ExamSeason;
+import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
@@ -115,7 +117,7 @@ public class SyncExercisesController {
 				final Set<String> requiredHeaders = Set.of("Section",
 						"Subject",
 						"Year",
-						"Retry",
+						"Subtype",
 						"Season",
 						"Source",
 						"Exercise Index",
@@ -174,10 +176,17 @@ public class SyncExercisesController {
 					final String section = record.get("Section").toUpperCase();
 					final String subject = record.get("Subject").toUpperCase();
 					final int year = Integer.parseInt(record.get("Year"));
-					final int season = PCUtils.parseInteger(record.get("Season"),
-							() -> "SEPT".equalsIgnoreCase(record.get("Season")) ? 9 : 6);
-					final boolean retry = PCUtils.parseBoolean(record.get("Retry"), () -> "YES".equalsIgnoreCase(record.get("Retry")));
-
+					final ExamSeason season = switch (record.get("Season")) {
+					case "ETE", "SUMMER" -> ExamSeason.SUMMER;
+					case "SEPT" -> ExamSeason.SEPTEMBER;
+					default -> null;
+					};
+					final ExamType subtype = switch (record.get("Subtype")) {
+					case "NORMAL" -> ExamType.NORMAL;
+					case "REP" -> ExamType.REP;
+					case "AJOU" -> ExamType.AJOU;
+					default -> null;
+					};
 					final String source = PCUtils.nullIfBlank(record.get("Source"));
 					final int exerciseIndex = Integer.parseInt(record.get("Exercise Index"));
 					final String qualifier = PCUtils.nullIfBlank(record.get("Qualifier"));
@@ -226,8 +235,8 @@ public class SyncExercisesController {
 
 					try {
 						examData = allowExamCreation
-								? this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, retry))
-								: this.examTable.loadUnique(new ExamData(subjectData.getId(), year, season, retry));
+								? this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype))
+								: this.examTable.loadUnique(new ExamData(subjectData.getId(), year, season, subtype));
 					} catch (final NoMatchingRowException e) {
 						emitter.send(SseEmitter.event().name("warning").data("Subject not found: " + subject));
 						continue;

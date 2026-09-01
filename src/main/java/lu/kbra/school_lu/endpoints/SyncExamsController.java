@@ -24,6 +24,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
+import lu.kbra.school_lu.data.ExamSeason;
+import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
@@ -101,7 +103,7 @@ public class SyncExamsController {
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
 
 				final Set<String> requiredHeaders = Set
-						.of("Section", "Subject", "Year", "Season", "Retry", "Name", "Mission statement", "Solution", "Data", "Oral");
+						.of("Section", "Subject", "Year", "Season", "Subtype", "Name", "Mission statement", "Solution", "Data", "Oral");
 
 				final Set<String> headers = new HashSet<>(parser.getHeaderNames());
 
@@ -134,16 +136,31 @@ public class SyncExamsController {
 					final String section = record.get("Section").toUpperCase();
 					final String subject = record.get("Subject").toUpperCase();
 					final int year = Integer.parseInt(record.get("Year"));
-					final int season = PCUtils.parseInteger(record.get("Season"),
-							() -> "SEPT".equalsIgnoreCase(record.get("Season")) ? 9 : 6);
-					final boolean retry = PCUtils.parseBoolean(record.get("Retry"),
-							() -> "YES".equalsIgnoreCase(record.get("Retry")) == true);
+					final ExamSeason season = switch (record.get("Season")) {
+					case "ETE", "SUMMER" -> ExamSeason.SUMMER;
+					case "SEPT" -> ExamSeason.SEPTEMBER;
+					default -> null;
+					};
+					final ExamType subtype = switch (record.get("Subtype")) {
+					case "NORMAL" -> ExamType.NORMAL;
+					case "REP" -> ExamType.REP;
+					case "AJOU" -> ExamType.AJOU;
+					default -> null;
+					};
 					final String name = PCUtils.nullIfBlank(record.get("Name"));
 					final String statement = PCUtils.nullIfBlank(record.get("Mission statement"));
 					final String solution = PCUtils.nullIfBlank(record.get("Solution"));
 					final String data = PCUtils.nullIfBlank(record.get("Data"));
 					final String oral = PCUtils.nullIfBlank(record.get("Oral"));
 
+					if (season == null) {
+						emitter.send(SseEmitter.event().name("warning").data("Unknown season: " + Arrays.toString(record.values())));
+						continue;
+					}
+					if (subtype == null) {
+						emitter.send(SseEmitter.event().name("warning").data("Unknown subtype: " + Arrays.toString(record.values())));
+						continue;
+					}
 					if (statement == null && solution == null && data == null && oral == null) {
 						emitter.send(
 								SseEmitter.event().name("warning").data("Exam with no attachments: " + Arrays.toString(record.values())));
@@ -174,7 +191,7 @@ public class SyncExamsController {
 						continue;
 					}
 
-					examData = this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, retry));
+					examData = this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype));
 
 					final BiConsumer<String, String> storeAttachment = (qualifier, path) -> {
 						if (path == null) {
