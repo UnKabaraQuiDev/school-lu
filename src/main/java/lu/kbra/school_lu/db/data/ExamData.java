@@ -8,6 +8,8 @@ import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
+import lu.kbra.school_lu.data.ExamSeason;
+import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.db.table.SubjectTable;
 
 import lombok.Data;
@@ -33,17 +35,17 @@ public class ExamData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
-	private int season;
+	private ExamSeason season;
 
 	@Column
 	@Unique(1)
-	private boolean retry;
+	private ExamType retry;
 
 	public ExamData(final Long id) {
 		this.id = id;
 	}
 
-	public ExamData(final Long subjectId, final int year, final int season, final boolean retry) {
+	public ExamData(Long subjectId, int year, ExamSeason season, ExamType retry) {
 		this.subjectId = subjectId;
 		this.year = year;
 		this.season = season;
@@ -54,4 +56,5 @@ public class ExamData implements DatabaseEntry {
 	public ExamData clone() {
 		return PCUtils.safeClone(super::clone);
 	}
+
 }
