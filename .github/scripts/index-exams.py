@@ -56,7 +56,7 @@ FILENAME_PATTERN = re.compile(
     (?P<year>\d{4})
     _
     (?P<season>[A-Z]+)
-    (?P<retry>_REP)?
+    (?P<retry>_REP|_AJOU)?
     (?:
         _
         (?P<name>.+?)
@@ -98,7 +98,7 @@ def parse_filename(path):
     prefix = match.group("prefix")
     year = match.group("year")
     season = match.group("season").upper()
-    retry = "Yes" if match.group("retry") else "No"
+    sub_type = "REP" if match.group("retry") and match.group("retry") == "_REP" else "AJOU" if match.group("retry") and match.group("retry") == "_AJOU" else "NORMAL"
     name = match.group("name") or ""
     file_type = match.group("type").upper()
 
@@ -160,7 +160,7 @@ def parse_filename(path):
         "Subject": subject.upper(),
         "Year": year,
         "Season": season,
-        "Retry": retry,
+        "Subtype": sub_type,
         "Name": name,
         "Type": file_type,
         "Path": path.relative_to(ROOT_DIR).as_posix(),
@@ -274,7 +274,7 @@ def collect_exams():
             parsed["Subject"],
             parsed["Year"],
             parsed["Season"],
-            parsed["Retry"],
+            parsed["Subtype"],
             parsed["Name"],
         )
 

@@ -2706,6 +2706,10 @@ class MainWindow(QMainWindow):
         self.file_list.setCurrentRow(
             next_index
         )
+        
+        self.file_list.setCurrentRow(
+            next_index
+        )
 
     def previous_file(self) -> None:
         if not self.pdfs:

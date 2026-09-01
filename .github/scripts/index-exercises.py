@@ -31,7 +31,7 @@ DIR_PATTERN = re.compile(
     (?P<year>\d{4})
     _
     (?P<season>[A-Z]+)
-    (?P<retry>_REP)?
+    (?P<retry>_REP|_AJOU)?
     _
     (?P<type>ENONCE|CORRIGE)
     $
@@ -114,13 +114,17 @@ def main():
 
         data = match.groupdict()
 
+        print(data)
+
         key = (
             data["section"],
             data["subject"],
             data["year"],
             data["season"],
-            bool(data["retry"]),
+            "REP" if data["retry"] and data["retry"] == "_REP" else "AJOU" if data["retry"] and data["retry"] == "_AJOU" else "NORMAL",
         )
+        
+        print(key)
 
         exams[key][data["type"].upper()] = folder
 
@@ -134,7 +138,7 @@ def main():
                 "Section",
                 "Subject",
                 "Year",
-                "Retry",
+                "Subtype",
                 "Season",
                 "Source",
                 "Exercise Index",
@@ -146,7 +150,7 @@ def main():
             ]
         )
 
-        for (section, subject, year, season, retry), files in sorted(exams.items()):
+        for (section, subject, year, season, subtype), files in sorted(exams.items()):
             for document_type, folder in sorted(files.items()):
                 index_path = folder / "index.csv"
 
@@ -202,7 +206,7 @@ def main():
                                 section,
                                 subject,
                                 year,
-                                "Yes" if retry else "No",
+                                subtype,
                                 season,
                                 source,
                                 exercise_index,
@@ -219,7 +223,7 @@ def main():
                 print(
                     f"Info: Found {row_count} boxes for "
                     f"{section}/{subject} {year} {season}"
-                    f"{'_REP' if retry else ''} {document_type}"
+                    f" {subtype} {document_type}"
                 )
 
     print(f"Wrote {output}")
