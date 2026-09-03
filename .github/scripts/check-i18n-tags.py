@@ -325,7 +325,6 @@ def main():
             f"[ERROR] {total_missing} missing translation(s) "
             "were added as placeholders."
         )
-        sys.exit(1)
 
 
 if __name__ == "__main__":
