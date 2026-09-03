@@ -26,7 +26,7 @@ CSV_HEADER = [
     "Subject",
     "Year",
     "Season",
-    "Retry",
+    "Subtype",
     "Name",
     "Mission statement",
     "Solution",
@@ -300,7 +300,7 @@ def create_csv(exams):
 
     for key in sorted(exams):
 
-        section, subject, year, season, retry, name = key
+        section, subject, year, season, subtype, name = key
 
         files = exams[key]
 
@@ -314,7 +314,7 @@ def create_csv(exams):
             subject,
             year,
             season,
-            retry,
+            subtype,
             name,
             mission_statement,
             solution,
