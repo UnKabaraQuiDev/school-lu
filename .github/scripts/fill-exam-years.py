@@ -75,18 +75,6 @@ def create_table(rows):
             item[0][2].casefold(),
         ),
     ):
-        # The exercises page is inside:
-        #
-        # exam-db/<section>/<subject>/<year>/<season>_<subtype>/
-        #
-        # so from year/index.html the link is simply:
-        #
-        # <season>_<subtype>/
-        exercises_url = (
-            f"{escape(season, quote=True)}_"
-            f"{escape(subtype, quote=True)}/"
-        )
-
         attachments = []
 
         seen_attachments = set()
@@ -140,6 +128,22 @@ def create_table(rows):
                     )
                 )
 
+        exercises_url = (
+            f"{escape(season, quote=True)}_"
+            f"{escape(subtype, quote=True)}/"
+        )
+
+        exercises_path = (
+            EXAMS_DB_DIR
+            / exam_rows[0]["Section"]
+            / exam_rows[0]["Subject"]
+            / exam_rows[0]["Year"]
+            / exercises_url
+            / "index.html"
+        )
+
+        include_exercises = exercises_path.exists()
+
         table_rows.append(
             f"""
                 <tr class="border-b hover:bg-gray-50">
@@ -149,19 +153,11 @@ def create_table(rows):
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(subtype)}
+                        {f'<a class="underline" href="{exercises_url}">' if include_exercises else ''}{escape(row["Subtype"])}{'</a>' if include_exercises else ''}
                     </td>
 
                     <td class="px-4 py-3 font-medium">
                         {escape(name)}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        <a
-                            href="{exercises_url}"
-                            data-i18n="view-exercises"
-                            class="inline-block px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                        ></a>
                     </td>
 
                     <td class="px-4 py-3">
@@ -187,7 +183,6 @@ def create_table(rows):
                     <th class="px-4 py-3">Season</th>
                     <th class="px-4 py-3">Subtype</th>
                     <th class="px-4 py-3">Name</th>
-                    <th class="px-4 py-3">View exercises</th>
                     <th class="px-4 py-3">Attachments</th>
 
                 </tr>

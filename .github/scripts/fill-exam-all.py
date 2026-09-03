@@ -46,19 +46,35 @@ def create_table(csv_file):
         reader = csv.DictReader(file)
 
         for row in reader:
+            exercises_url = (
+                f'{escape(row["Section"], quote=True)}/'
+                f'{escape(row["Subject"], quote=True)}/'
+                f'{escape(row["Year"], quote=True)}/'
+                f'{escape(row["Season"], quote=True)}_'
+                f'{escape(row["Subtype"], quote=True)}'
+            )
+
+            exercises_path = (
+                EXAMS_DB_DIR
+                / exercises_url
+                / "index.html"
+            )
+
+            include_exercises = exercises_path.exists()
+            
             rows.append(f"""
                 <tr class="border-b hover:bg-gray-50">
 
                     <td class="px-4 py-3">
-                        {escape(row["Section"])}
+                        <a class="underline" href="../{row["Section"]}">{escape(row["Section"])}</a>
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(row["Subject"])}
+                        <a class="underline" href="../{row["Section"]}/{row["Subject"]}">{escape(row["Subject"])}</a>
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(row["Year"])}
+                        <a class="underline" href="../{row["Section"]}/{row["Subject"]}/{row["Year"]}">{escape(row["Year"])}</a>
                     </td>
 
                     <td class="px-4 py-3">
@@ -66,7 +82,7 @@ def create_table(csv_file):
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(row["Subtype"])}
+                        {f'<a class="underline" href="../{exercises_url}">' if include_exercises else ''}{escape(row["Subtype"])}{'</a>' if include_exercises else ''}
                     </td>
 
                     <td class="px-4 py-3 font-medium">
