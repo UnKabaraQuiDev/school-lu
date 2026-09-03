@@ -24,24 +24,6 @@ TEMPLATE_FILE = EXAMS_DB_DIR / "index.template.html"
 CSV_FILE = DATA_DIR / "exams/db.csv"
 OUTPUT_FILE = EXAMS_DB_DIR / "index.html"
 
-
-def create_section_button(section):
-    """Create a button linking to a section."""
-
-    section_url = escape(section, quote=True)
-
-    return f"""
-<a
-    href="{section_url}/"
-    class="inline-block px-4 py-2 rounded-lg bg-blue-100 text-blue-700
-           hover:bg-blue-200 transition"
-    data-i18n="section.view"
->
-    View
-</a>
-"""
-
-
 def create_table(csv_file):
     """Load CSV data and create a table containing all unique sections."""
 
@@ -73,11 +55,7 @@ def create_table(csv_file):
                 <tr class="border-b last:border-b-0 hover:bg-gray-50">
 
                     <td class="px-4 py-3 font-medium">
-                        {escape(section)}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {create_section_button(section)}
+                        <a class="underline" href="{section}">{escape(section)}</a>
                     </td>
 
                 </tr>
@@ -99,13 +77,6 @@ def create_table(csv_file):
                         data-i18n="section.code"
                     >
                         Section
-                    </th>
-
-                    <th
-                        class="px-4 py-3"
-                        data-i18n="action"
-                    >
-                        Action
                     </th>
 
                 </tr>

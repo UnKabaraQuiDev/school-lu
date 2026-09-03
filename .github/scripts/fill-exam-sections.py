@@ -84,11 +84,7 @@ def create_table(section, subjects):
                 <tr class="border-b last:border-b-0 hover:bg-gray-50">
 
                     <td class="px-4 py-3 font-medium">
-                        {escape(subject)}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {create_subject_button(section, subject)}
+                        <a class="underline" href="{subject}">{escape(subject)}</a>
                     </td>
 
                 </tr>
@@ -110,13 +106,6 @@ def create_table(section, subjects):
                         data-i18n="subject.code"
                     >
                         Subject
-                    </th>
-
-                    <th
-                        class="px-4 py-3"
-                        data-i18n="action"
-                    >
-                        Action
                     </th>
 
                 </tr>
