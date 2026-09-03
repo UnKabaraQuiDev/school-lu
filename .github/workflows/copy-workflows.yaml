@@ -59,6 +59,8 @@ jobs:
               echo "No changes to commit for $branch"
             else
               git commit -m "ci: Sync workflows from main"
+              git reset --hard HEAD
+              git pull --rebase origin $branch
               git push origin HEAD:"$branch"
             fi
 

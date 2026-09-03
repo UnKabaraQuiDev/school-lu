@@ -91,11 +91,12 @@ jobs:
 
       - name: Commit & Push changes
         run: |
-          git add exams/
+          git add exams/**/*.webp
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             git commit -m "ci: Crop exercise images"
+            git reset --hard HEAD
             git pull --rebase origin main
             git push origin HEAD:main
           fi
