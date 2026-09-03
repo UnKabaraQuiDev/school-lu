@@ -39,6 +39,7 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "ci: Add missing i18n keys"
+            git reset --hard HEAD
             git pull --rebase origin pages
             git push origin HEAD:pages
           fi
