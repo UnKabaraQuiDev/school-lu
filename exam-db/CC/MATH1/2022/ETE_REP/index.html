@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        <span data-i18n="index.pageTitle">Sections</span>
+        <span>/</span>
+        <span>CC</span>
+        <span>/</span>
+        <span>MATH1</span>
+        <span>/</span>
+        <span>2022</span>
+        <span>/</span>
+        <span>ETE_REP</span>
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/css.js"></script>
+    <script src="/js/i18n.js" data-rel="../../../../"></script>
+    <script src="/js/api.js"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-6 py-5">
+
+            <h1 class="text-2xl font-bold" data-i18n="exercises.title">
+                Exercises
+            </h1>
+
+            <p>
+                <a class="underline" href="../../../..">Sections</a>
+                <span>/</span>
+                <a class="underline" href="../../..">CC</a>
+                <span>/</span>
+                <a class="underline" href="../..">MATH1</a>
+                <span>/</span>
+                <a class="underline" href="..">2022</a>
+                <span>/</span>
+                <a class="underline" href=".">ETE_REP</a>
+            </p>
+
+        </div>
+
+        <select
+            onchange="setLanguage(this.value)"
+            class="border rounded-lg px-3 py-2"
+            aria-label="Language"
+        >
+            <option value="en" data-i18n="languages.english">English</option>
+            <option value="fr" data-i18n="languages.french">Français</option>
+            <option value="de" data-i18n="languages.german">Deutsch</option>
+        </select>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-8">
+
+        <!-- Exam documents -->
+        <section
+            id="exam-links"
+            class="mb-8 rounded-xl bg-white p-5 shadow-sm"
+        >
+            <h2 class="mb-4 text-xl font-bold">
+                <span data-i18n="exams.documents">
+                    Documents
+                </span>
+            </h2>
+
+            <div class="flex flex-wrap gap-3">
+                
+<a
+    href="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE.pdf"
+    target="_blank"
+    rel="noopener"
+    data-i18n="solution"
+    class="inline-block px-3 py-1.5 rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition"
+>Solution</a>
+
+<a
+    href="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE.pdf"
+    target="_blank"
+    rel="noopener"
+    data-i18n="mission"
+    class="inline-block px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+>Mission</a>
+
+            </div>
+        </section>
+
+
+        <!-- Exercises -->
+        <div
+            id="exercises"
+            class="space-y-12"
+        >
+            <section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        1
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/1.webp"
+        alt="Exercise 1 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/1.webp"
+        alt="Exercise 1 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        2
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/2.webp"
+        alt="Exercise 2 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/2.webp"
+        alt="Exercise 2 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        3
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/3.webp"
+        alt="Exercise 3 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/3.webp"
+        alt="Exercise 3 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        4
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/4.webp"
+        alt="Exercise 4 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/4.webp"
+        alt="Exercise 4 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        5
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/5.webp"
+        alt="Exercise 5 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/5.webp"
+        alt="Exercise 5 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        6
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/6.webp"
+        alt="Exercise 6 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/6.webp"
+        alt="Exercise 6 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        7
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_ENONCE/7.webp"
+        alt="Exercise 7 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button><button
+    type="button"
+    class="exercise-image group h-[400px] w-[min(70vw,600px)] shrink-0 overflow-hidden rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CC/CC_MATH1/CC_MATH1_2022_ETE_REP_CORRIGE/7.webp"
+        alt="Exercise 7 solution"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section>
+        </div>
+
+    </main>
+
+
+    <!-- Fullscreen viewer -->
+    <div
+        id="image-viewer"
+        class="fixed inset-0 z-50 hidden bg-black/95"
+        role="dialog"
+        aria-modal="true"
+    >
+        <!-- Close -->
+        <button
+            id="viewer-close"
+            type="button"
+            class="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20"
+            aria-label="Close"
+            data-i18n="common.close"
+        >
+            &times;
+        </button>
+
+        <!-- Previous exercise -->
+        <button
+            id="viewer-exercise-prev"
+            type="button"
+            class="absolute left-1/2 top-4 z-20 flex h-10 w-16 -translate-x-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20"
+            aria-label="Previous exercise"
+            data-i18n="exercises.previous_exercise"
+        >
+            ↑
+        </button>
+
+        <!-- Next exercise -->
+        <button
+            id="viewer-exercise-next"
+            type="button"
+            class="absolute bottom-4 left-1/2 z-20 flex h-10 w-16 -translate-x-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20"
+            aria-label="Next exercise"
+            data-i18n="exercises.next_exercise"
+        >
+            ↓
+        </button>
+
+        <!-- Previous image -->
+        <button
+            id="viewer-image-prev"
+            type="button"
+            class="absolute left-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-3xl text-white hover:bg-white/20"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <!-- Next image -->
+        <button
+            id="viewer-image-next"
+            type="button"
+            class="absolute right-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-3xl text-white hover:bg-white/20"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+
+        <div
+            id="viewer-container"
+            class="absolute inset-0 flex items-center justify-center overflow-hidden"
+        >
+            <img
+                id="viewer-image"
+                src=""
+                alt=""
+                class="max-h-none max-w-none select-none object-contain"
+                draggable="false"
+            >
+        </div>
+
+        <div
+            id="viewer-counter"
+            class="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-white/10 px-4 py-2 text-sm text-white"
+        ></div>
+    </div>
+
+
+    <script>
+        const exerciseElements = [
+            ...document.querySelectorAll(".exercise")
+        ];
+
+        const viewer = document.getElementById("image-viewer");
+        const viewerContainer = document.getElementById("viewer-container");
+        const viewerImage = document.getElementById("viewer-image");
+        const viewerCounter = document.getElementById("viewer-counter");
+
+        let currentExercise = 0;
+        let currentImage = 0;
+
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let startTranslateX = 0;
+        let startTranslateY = 0;
+
+        let pinchStartDistance = 0;
+        let pinchStartScale = 1;
+
+
+        function getImages(exerciseIndex) {
+            return [
+                ...exerciseElements[exerciseIndex]
+                    .querySelectorAll(".exercise-image img")
+            ];
+        }
+
+
+        function resetZoom() {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+
+            updateTransform();
+        }
+
+
+        function updateTransform() {
+            viewerImage.style.transform =
+                `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+
+        function clampScale(value) {
+            return Math.min(Math.max(value, 0.5), 8);
+        }
+
+
+        function updateViewer() {
+            const images = getImages(currentExercise);
+            const image = images[currentImage];
+
+            if (!image) {
+                return;
+            }
+
+            viewerImage.src = image.src;
+            viewerImage.alt = image.alt;
+
+            viewerCounter.textContent =
+                `${currentImage + 1} / ${images.length}`;
+
+            resetZoom();
+        }
+
+
+        function openViewer(exerciseIndex, imageIndex) {
+            currentExercise = exerciseIndex;
+            currentImage = imageIndex;
+
+            viewer.classList.remove("hidden");
+            document.body.classList.add("overflow-hidden");
+
+            updateViewer();
+        }
+
+
+        function closeViewer() {
+            viewer.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+
+            viewerImage.src = "";
+        }
+
+
+        function previousImage() {
+            const images = getImages(currentExercise);
+
+            if (currentImage > 0) {
+                currentImage--;
+            } else {
+                currentImage = images.length - 1;
+            }
+
+            updateViewer();
+        }
+
+
+        function nextImage() {
+            const images = getImages(currentExercise);
+
+            if (currentImage < images.length - 1) {
+                currentImage++;
+            } else {
+                currentImage = 0;
+            }
+
+            updateViewer();
+        }
+
+
+        function previousExercise() {
+            if (currentExercise <= 0) {
+                return;
+            }
+
+            currentExercise--;
+
+            const images = getImages(currentExercise);
+
+            currentImage = Math.min(
+                currentImage,
+                images.length - 1
+            );
+
+            updateViewer();
+        }
+
+
+        function nextExercise() {
+            if (currentExercise >= exerciseElements.length - 1) {
+                return;
+            }
+
+            currentExercise++;
+
+            const images = getImages(currentExercise);
+
+            currentImage = Math.min(
+                currentImage,
+                images.length - 1
+            );
+
+            updateViewer();
+        }
+
+
+        exerciseElements.forEach((exercise, exerciseIndex) => {
+            const images = exercise.querySelectorAll(".exercise-image");
+
+            images.forEach((image, imageIndex) => {
+                image.addEventListener("click", () => {
+                    openViewer(exerciseIndex, imageIndex);
+                });
+            });
+        });
+
+
+        exerciseElements.forEach((exercise) => {
+            const container = exercise.querySelector(
+                ".exercise-images > div"
+            );
+
+            exercise.querySelector(".previous-image")
+                .addEventListener("click", () => {
+                    container.scrollBy({
+                        left: -350,
+                        behavior: "smooth"
+                    });
+                });
+
+            exercise.querySelector(".next-image")
+                .addEventListener("click", () => {
+                    container.scrollBy({
+                        left: 350,
+                        behavior: "smooth"
+                    });
+                });
+        });
+
+
+        document.getElementById("viewer-close")
+            .addEventListener("click", closeViewer);
+
+        document.getElementById("viewer-image-prev")
+            .addEventListener("click", previousImage);
+
+        document.getElementById("viewer-image-next")
+            .addEventListener("click", nextImage);
+
+        document.getElementById("viewer-exercise-prev")
+            .addEventListener("click", previousExercise);
+
+        document.getElementById("viewer-exercise-next")
+            .addEventListener("click", nextExercise);
+
+
+        viewerContainer.addEventListener(
+            "wheel",
+            (event) => {
+                event.preventDefault();
+
+                const oldScale = scale;
+                const factor = event.deltaY < 0 ? 1.15 : 0.87;
+
+                scale = clampScale(scale * factor);
+
+                const rect = viewerImage.getBoundingClientRect();
+
+                const mouseX =
+                    event.clientX -
+                    rect.left -
+                    rect.width / 2;
+
+                const mouseY =
+                    event.clientY -
+                    rect.top -
+                    rect.height / 2;
+
+                const ratio = scale / oldScale;
+
+                translateX -= mouseX * (ratio - 1);
+                translateY -= mouseY * (ratio - 1);
+
+                updateTransform();
+            },
+            { passive: false }
+        );
+
+
+        viewerContainer.addEventListener("mousedown", (event) => {
+            if (scale <= 1) {
+                return;
+            }
+
+            isDragging = true;
+
+            dragStartX = event.clientX;
+            dragStartY = event.clientY;
+
+            startTranslateX = translateX;
+            startTranslateY = translateY;
+        });
+
+
+        window.addEventListener("mousemove", (event) => {
+            if (!isDragging) {
+                return;
+            }
+
+            translateX =
+                startTranslateX +
+                event.clientX -
+                dragStartX;
+
+            translateY =
+                startTranslateY +
+                event.clientY -
+                dragStartY;
+
+            updateTransform();
+        });
+
+
+        window.addEventListener("mouseup", () => {
+            isDragging = false;
+        });
+
+
+        function touchDistance(a, b) {
+            const dx = a.clientX - b.clientX;
+            const dy = a.clientY - b.clientY;
+
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+
+        viewerContainer.addEventListener(
+            "touchstart",
+            (event) => {
+                if (event.touches.length === 2) {
+                    pinchStartDistance = touchDistance(
+                        event.touches[0],
+                        event.touches[1]
+                    );
+
+                    pinchStartScale = scale;
+                    return;
+                }
+
+                if (event.touches.length === 1 && scale > 1) {
+                    isDragging = true;
+
+                    dragStartX = event.touches[0].clientX;
+                    dragStartY = event.touches[0].clientY;
+
+                    startTranslateX = translateX;
+                    startTranslateY = translateY;
+                }
+            },
+            { passive: false }
+        );
+
+
+        viewerContainer.addEventListener(
+            "touchmove",
+            (event) => {
+                event.preventDefault();
+
+                if (event.touches.length === 2) {
+                    const distance = touchDistance(
+                        event.touches[0],
+                        event.touches[1]
+                    );
+
+                    scale = clampScale(
+                        pinchStartScale *
+                        (distance / pinchStartDistance)
+                    );
+
+                    updateTransform();
+                    return;
+                }
+
+                if (event.touches.length === 1 && isDragging) {
+                    translateX =
+                        startTranslateX +
+                        event.touches[0].clientX -
+                        dragStartX;
+
+                    translateY =
+                        startTranslateY +
+                        event.touches[0].clientY -
+                        dragStartY;
+
+                    updateTransform();
+                }
+            },
+            { passive: false }
+        );
+
+
+        viewerContainer.addEventListener("touchend", () => {
+            isDragging = false;
+        });
+
+
+        document.addEventListener("keydown", (event) => {
+            if (viewer.classList.contains("hidden")) {
+                return;
+            }
+
+            switch (event.key) {
+                case "Escape":
+                    closeViewer();
+                    break;
+
+                case "ArrowLeft":
+                    previousImage();
+                    break;
+
+                case "ArrowRight":
+                    nextImage();
+                    break;
+
+                case "ArrowUp":
+                    previousExercise();
+                    break;
+
+                case "ArrowDown":
+                    nextExercise();
+                    break;
+
+                case "+":
+                case "=":
+                    scale = clampScale(scale * 1.2);
+                    updateTransform();
+                    break;
+
+                case "-":
+                    scale = clampScale(scale * 0.8);
+                    updateTransform();
+                    break;
+
+                case "0":
+                    resetZoom();
+                    break;
+            }
+        });
+
+
+        viewer.addEventListener("click", (event) => {
+            if (event.target === viewer) {
+                closeViewer();
+            }
+        });
+    </script>
+</body>
+</html>
