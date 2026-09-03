@@ -34,7 +34,7 @@ jobs:
 
       - name: Commit & Push changes
         run: |
-          git add '**/i18n/*.json'
+          git add '*/i18n/*.json'
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
