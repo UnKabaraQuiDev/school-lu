@@ -1,0 +1,32 @@
+<section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        {{EXERCISE_TITLE}}
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            {{CONTENT}}
+
+        </div>
+
+        <button
+            type="button"
+            class="previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section>

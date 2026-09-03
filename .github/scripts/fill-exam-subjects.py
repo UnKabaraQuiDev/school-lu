@@ -52,6 +52,12 @@ def create_table(rows):
     table_rows = []
 
     for row in rows:
+        exercises_url = (
+            f'{escape(row["Year"], quote=True)}/'
+            f'{escape(row["Season"], quote=True)}_'
+            f'{escape(row["Subtype"], quote=True)}'
+        )
+
         table_rows.append(
             f"""
                 <tr class="border-b hover:bg-gray-50">
@@ -65,11 +71,19 @@ def create_table(rows):
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(row["Retry"])}
+                        {escape(row["Subtype"])}
                     </td>
 
                     <td class="px-4 py-3 font-medium">
                         {escape(row["Name"])}
+                    </td>
+
+                    <td class="px-4 py-3">
+                        <a
+                            href="{exercises_url}"
+                            data-i18n="view-exercises"
+                            class="inline-block px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                        ></a>
                     </td>
 
                     <td class="px-4 py-3">
@@ -118,8 +132,9 @@ def create_table(rows):
 
                     <th class="px-4 py-3">Year</th>
                     <th class="px-4 py-3">Season</th>
-                    <th class="px-4 py-3">Retry</th>
+                    <th class="px-4 py-3">Subtype</th>
                     <th class="px-4 py-3">Name</th>
+                    <th class="px-4 py-3">View exercises</th>
                     <th class="px-4 py-3">Attachments</th>
 
                 </tr>

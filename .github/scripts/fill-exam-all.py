@@ -66,7 +66,7 @@ def create_table(csv_file):
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(row["Retry"])}
+                        {escape(row["Subtype"])}
                     </td>
 
                     <td class="px-4 py-3 font-medium">
@@ -122,7 +122,7 @@ def create_table(csv_file):
                     <th class="px-4 py-3">Subject</th>
                     <th class="px-4 py-3">Date</th>
                     <th class="px-4 py-3">Season</th>
-                    <th class="px-4 py-3">Retry</th>
+                    <th class="px-4 py-3">Subtype</th>
                     <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Attachments</th>
 
