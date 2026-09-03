@@ -28,79 +28,17 @@ def exercise_number(name: str) -> int | None:
     return int(match.group()) if match else None
 
 
-def alternative_number(name: str) -> int:
+def alternative_number(name: str) -> int | None:
     match = ALTERNATIVE_PATTERN.search(name)
-    return int(match.group(1)) if match else 0
+    if match:
+        return int(match.group(1))
+    return None
 
 
 def top_position(row: dict[str, str]) -> float:
     pos_y = float(row["PosY"])
     height = float(row["Height"])
     return min(pos_y, pos_y + height)
-
-
-def sort_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    """
-    Sort normal exercise rows by:
-      1. exercise number
-      2. alternative number
-      3. top position
-
-    Rows with negative indices are placed directly after their
-    corresponding positive-index row, ordered by top position.
-
-    Rows without an exercise number are placed according to their
-    top position.
-    """
-    positive_rows = {
-        int(row["Index"]): row
-        for row in rows
-        if int(row["Index"]) > 0
-    }
-
-    negative_rows: dict[int, list[dict[str, str]]] = {}
-
-    for row in rows:
-        index = int(row["Index"])
-        if index < 0:
-            negative_rows.setdefault(-index, []).append(row)
-
-    # Validate that every negative index refers to an existing positive index.
-    for index in negative_rows:
-        if index not in positive_rows:
-            raise ValueError(
-                f"Negative index -{index} has no corresponding positive index"
-            )
-
-    def positive_sort_key(row: dict[str, str]):
-        number = exercise_number(row["Name"])
-        if number is None:
-            return (1, float("inf"), float("inf"), top_position(row))
-
-        return (
-            0,
-            number,
-            alternative_number(row["Name"]),
-            top_position(row),
-        )
-
-    sorted_positive = sorted(positive_rows.values(), key=positive_sort_key)
-
-    result: list[dict[str, str]] = []
-
-    for row in sorted_positive:
-        old_index = int(row["Index"])
-        result.append(row)
-
-        related = sorted(
-            negative_rows.get(old_index, []),
-            key=top_position,
-        )
-        result.extend(related)
-
-    # Any rows not covered above are rows with invalid/duplicate positive
-    # indices, which are handled by validation before this point.
-    return result
 
 
 def process_file(path: Path) -> str:
@@ -110,89 +48,254 @@ def process_file(path: Path) -> str:
         if reader.fieldnames is None:
             raise ValueError("CSV has no header")
 
-        required_fields = {
-            "Index",
-            "Name",
-            "PosX",
-            "PosY",
-            "Width",
-            "Height",
-        }
-        missing = required_fields - set(reader.fieldnames)
-        if missing:
-            raise ValueError(
-                f"Missing required columns: {', '.join(sorted(missing))}"
-            )
-
         rows = list(reader)
+        fieldnames = reader.fieldnames
 
-    # Check the starting list for index conflicts.
-    positive_indices: dict[int, int] = {}
-    negative_indices: list[tuple[int, int]] = []
+    # ------------------------------------------------------------------
+    # Validate the existing indices.
+    # ------------------------------------------------------------------
+
+    positive_rows: dict[int, dict[str, str]] = {}
+    negative_rows: dict[int, list[dict[str, str]]] = {}
 
     for row_number, row in enumerate(rows, start=2):
         try:
             index = int(row["Index"])
         except ValueError as exc:
             raise ValueError(
-                f"Invalid Index {row['Index']!r} on CSV row {row_number}"
+                f"Invalid index {row['Index']!r} on row {row_number}"
             ) from exc
 
         if index > 0:
-            if index in positive_indices:
+            if index in positive_rows:
                 raise ValueError(
-                    f"Index conflict: positive index {index} occurs more than once"
+                    f"Index conflict: {index} occurs more than once"
                 )
-            positive_indices[index] = row_number
+
+            positive_rows[index] = row
 
         elif index < 0:
-            negative_indices.append((-index, row_number))
+            negative_rows.setdefault(-index, []).append(row)
 
-    # Every negative index must have exactly one positive counterpart.
-    for related_index, row_number in negative_indices:
-        if related_index not in positive_indices:
+    # Every negative index must have a positive counterpart.
+    for index in negative_rows:
+        if index not in positive_rows:
             raise ValueError(
-                f"Index conflict: row {row_number} uses -{related_index}, "
-                f"but {related_index} does not exist"
+                f"Index conflict: -{index} has no corresponding {index}"
             )
 
-    sorted_rows = sort_rows(rows)
+    # ------------------------------------------------------------------
+    # Build groups.
+    #
+    # A group consists of:
+    #
+    #   positive row
+    #   -positive row
+    #   -positive row
+    #   ...
+    #
+    # The whole group moves together.
+    # ------------------------------------------------------------------
 
-    # Assign new indices. Negative rows inherit the index of the positive
-    # exercise they belong to.
-    new_rows: list[dict[str, str]] = []
+    groups = []
 
-    for new_index, row in enumerate(
-        (row for row in sorted_rows if int(row["Index"]) > 0),
-        start=1,
-    ):
-        old_index = int(row["Index"])
-
-        updated_row = row.copy()
-        updated_row["Index"] = str(new_index)
-        new_rows.append(updated_row)
+    for index, row in positive_rows.items():
+        number = exercise_number(row["Name"])
+        alternative = alternative_number(row["Name"])
 
         related_rows = sorted(
-            negative_rows := [
-                candidate
-                for candidate in sorted_rows
-                if int(candidate["Index"]) == -old_index
-            ],
+            negative_rows.get(index, []),
             key=top_position,
         )
 
-        for related_row in related_rows:
+        group = [row, *related_rows]
+
+        if number is not None:
+            # Numbered exercises are ordered by:
+            #   exercise number
+            #   alternative number
+            #
+            # The top position is only a tie-breaker.
+            sort_key = (
+                0,
+                number,
+                alternative if alternative is not None else 0,
+                top_position(row),
+            )
+        else:
+            # Rows without an exercise number are positioned by their
+            # physical position in the document.
+            sort_key = (
+                1,
+                top_position(row),
+            )
+
+        groups.append((sort_key, group))
+
+    # ------------------------------------------------------------------
+    # Important:
+    #
+    # Numbered exercises and unnumbered rows need to be mixed according
+    # to the actual document position.
+    #
+    # Numbered exercises normally use their exercise number for ordering,
+    # but an unnumbered row such as "Theorie" is placed by PosY.
+    #
+    # To achieve that, determine the position where each group belongs.
+    # ------------------------------------------------------------------
+
+    def group_sort_key(item):
+        _, group = item
+        positive_row = group[0]
+
+        number = exercise_number(positive_row["Name"])
+
+        if number is None:
+            # Unnumbered rows are sorted by their actual position.
+            return (
+                top_position(positive_row),
+                0,
+                0,
+            )
+
+        alternative = alternative_number(positive_row)
+
+        # Numbered exercises are ordered by exercise number and alternative.
+        #
+        # The document position is used only as a final tie-breaker.
+        return (
+            float("inf"),
+            number,
+            alternative if alternative is not None else 0,
+            top_position(positive_row),
+        )
+
+    # The above still cannot mix "Theorie" correctly with numbered rows:
+    # "Theorie" needs to participate in the same ordering based on its
+    # physical position whenever it falls before/after numbered exercises.
+    #
+    # Therefore calculate the intended sequence incrementally below.
+
+    numbered_groups = []
+    unnumbered_groups = []
+
+    for _, group in groups:
+        positive_row = group[0]
+        number = exercise_number(positive_row["Name"])
+
+        if number is None:
+            unnumbered_groups.append(group)
+        else:
+            numbered_groups.append(group)
+
+    numbered_groups.sort(
+        key=lambda group: (
+            exercise_number(group[0]["Name"]),
+            (
+                alternative_number(group[0]["Name"])
+                if alternative_number(group[0]["Name"]) is not None
+                else 0
+            ),
+            top_position(group[0]),
+        )
+    )
+
+    unnumbered_groups.sort(
+        key=lambda group: top_position(group[0])
+    )
+
+    # ------------------------------------------------------------------
+    # Merge them according to document position.
+    #
+    # Numbered exercises keep their exercise-number ordering relative to
+    # each other. Unnumbered rows are inserted according to PosY.
+    # ------------------------------------------------------------------
+
+    result_groups = []
+
+    numbered_index = 0
+    unnumbered_index = 0
+
+    while (
+        numbered_index < len(numbered_groups)
+        or unnumbered_index < len(unnumbered_groups)
+    ):
+        numbered_group = (
+            numbered_groups[numbered_index]
+            if numbered_index < len(numbered_groups)
+            else None
+        )
+
+        unnumbered_group = (
+            unnumbered_groups[unnumbered_index]
+            if unnumbered_index < len(unnumbered_groups)
+            else None
+        )
+
+        if numbered_group is None:
+            result_groups.append(unnumbered_group)
+            unnumbered_index += 1
+            continue
+
+        if unnumbered_group is None:
+            result_groups.append(numbered_group)
+            numbered_index += 1
+            continue
+
+        # An unnumbered row belongs before the next numbered exercise
+        # if it appears physically before that exercise.
+        if top_position(unnumbered_group[0]) < top_position(numbered_group[0]):
+            result_groups.append(unnumbered_group)
+            unnumbered_index += 1
+        else:
+            result_groups.append(numbered_group)
+            numbered_index += 1
+
+    sorted_rows = [
+        row
+        for group in result_groups
+        for row in group
+    ]
+
+    # ------------------------------------------------------------------
+    # Assign new indices.
+    #
+    # Every positive row gets a new sequential index.
+    # All of its related negative rows receive the corresponding negative
+    # index.
+    # ------------------------------------------------------------------
+
+    new_rows = []
+
+    for new_index, group in enumerate(result_groups, start=1):
+        positive_row = group[0]
+        old_index = int(positive_row["Index"])
+
+        updated_positive = positive_row.copy()
+        updated_positive["Index"] = str(new_index)
+        new_rows.append(updated_positive)
+
+        for related_row in group[1:]:
+            # Make sure this really is a negative row belonging to the
+            # positive row.
+            if int(related_row["Index"]) != -old_index:
+                raise ValueError(
+                    f"Internal index conflict for {old_index}"
+                )
+
             updated_related = related_row.copy()
             updated_related["Index"] = str(-new_index)
             new_rows.append(updated_related)
 
-    # Compare the complete CSV content, not just the ordering.
-    fieldnames = reader.fieldnames
+    # ------------------------------------------------------------------
+    # Serialize and compare.
+    # ------------------------------------------------------------------
 
-    def serialize(rows_to_write: list[dict[str, str]]) -> str:
+    def serialize(rows_to_write):
         from io import StringIO
 
         output = StringIO()
+
         writer = csv.DictWriter(
             output,
             fieldnames=fieldnames,
@@ -200,6 +303,7 @@ def process_file(path: Path) -> str:
         )
         writer.writeheader()
         writer.writerows(rows_to_write)
+
         return output.getvalue()
 
     original_content = serialize(rows)
@@ -209,26 +313,13 @@ def process_file(path: Path) -> str:
         print(f"[INFO] Already correct: {path}")
         return "correct"
 
-    # Do not write anything if the resulting list contains conflicts.
-    seen_positive: set[int] = set()
-
-    for row in new_rows:
-        index = int(row["Index"])
-
-        if index > 0:
-            if index in seen_positive:
-                raise ValueError(
-                    f"Generated index conflict: {index} occurs more than once"
-                )
-            seen_positive.add(index)
-
     path.write_text(new_content, encoding="utf-8")
-    print(f"[INFO] Edited: {path}")
 
+    print(f"[INFO] Edited: {path}")
     return "edited"
 
 
-def main() -> None:
+def main():
     files = sorted(EXAMS_DIR.rglob("index.csv"))
 
     stats = {
@@ -242,6 +333,7 @@ def main() -> None:
         try:
             result = process_file(path)
             stats[result] += 1
+
         except Exception as exc:
             stats["errors"] += 1
             print(f"[WARNING] Skipped {path}: {exc}")

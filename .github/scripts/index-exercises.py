@@ -39,7 +39,7 @@ DIR_PATTERN = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
-EXERCISE_NUMBER_PATTERN = re.compile(r"\d+")
+EXERCISE_NUMBER_PATTERN = re.compile(r" \d+")
 ALTERNATIVE_PATTERN = re.compile(r"#(\d+)$")
 
 
@@ -114,8 +114,6 @@ def main():
 
         data = match.groupdict()
 
-        print(data)
-
         key = (
             data["section"],
             data["subject"],
@@ -124,8 +122,6 @@ def main():
             "REP" if data["retry"] and data["retry"] == "_REP" else "AJOU" if data["retry"] and data["retry"] == "_AJOU" else "NORMAL",
         )
         
-        print(key)
-
         exams[key][data["type"].upper()] = folder
 
     output = EXAMS_DIR / "exercises.csv"
