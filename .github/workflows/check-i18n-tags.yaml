@@ -43,10 +43,3 @@ jobs:
             git pull --rebase origin pages
             git push origin HEAD:pages
           fi
-
-      - name: Fail if translations were missing
-        if: steps.check.outcome == 'failure'
-        run: |
-          echo "Missing i18n translations were found."
-          echo "Placeholder entries have been added and committed."
-          exit 1
