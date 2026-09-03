@@ -38,6 +38,7 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "ci: Sync exams index"
+            git reset --hard HEAD
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -50,10 +51,12 @@ jobs:
       - name: Commit & Push changes
         run: |
           git add exams/exercises.csv
+          git add exams/**/index.csv
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             git commit -m "ci: Sync exercises index"
+            git reset --hard HEAD
             git pull --rebase origin main
             git push origin HEAD:main
           fi

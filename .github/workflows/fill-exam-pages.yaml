@@ -55,6 +55,7 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "ci: Fill template for exam-db"
+            git reset --hard HEAD
             git pull --rebase origin pages
             git push origin HEAD:pages
           fi
