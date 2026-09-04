@@ -57,6 +57,92 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+class WordCompleter(QCompleter):
+    """
+    Completer for a space-separated tag editor.
+
+    QCompleter normally completes the whole line.  This subclass
+    limits completion to the tag immediately around the cursor and
+    then replaces only that tag, so completion works for every word.
+    """
+
+    def __init__(self, model, parent=None):
+        super().__init__(model, parent)
+
+        self.setCaseSensitivity(
+            Qt.CaseSensitivity.CaseInsensitive
+        )
+
+        self.setFilterMode(
+            Qt.MatchFlag.MatchStartsWith
+        )
+
+        self.setCompletionMode(
+            QCompleter.CompletionMode.PopupCompletion
+        )
+
+        self._word_start = 0
+        self._word_end = 0
+
+    def _word_bounds(self, text: str, cursor: int) -> tuple[int, int]:
+        start = cursor
+
+        while start > 0 and not text[start - 1].isspace():
+            start -= 1
+
+        end = cursor
+
+        while end < len(text) and not text[end].isspace():
+            end += 1
+
+        return start, end
+
+    def splitPath(self, _path):
+        editor = self.widget()
+
+        if editor is None:
+            return [_path]
+
+        text = editor.text()
+        cursor = editor.cursorPosition()
+
+        start, end = self._word_bounds(
+            text,
+            cursor,
+        )
+
+        self._word_start = start
+        self._word_end = end
+
+        return [
+            text[start:cursor]
+        ]
+
+    def pathFromIndex(self, index):
+        editor = self.widget()
+
+        if editor is None:
+            return super().pathFromIndex(index)
+
+        completion = super().pathFromIndex(index)
+
+        text = editor.text()
+        cursor = editor.cursorPosition()
+
+        start, end = self._word_bounds(
+            text,
+            cursor,
+        )
+
+        self._word_start = start
+        self._word_end = end
+
+        return (
+            text[:start]
+            + completion
+            + text[end:]
+        )
+
 
 GIT_DIR = Path(
     subprocess.check_output(
@@ -385,6 +471,73 @@ def ensure_tag_in_cache(tag: str) -> None:
         )
 
 
+def remove_tag_from_cache(tag: str) -> bool:
+    """
+    Remove one tag from EXAM_DIR/.tags-cache.
+
+    Returns True when the cache file was successfully rewritten.
+    The exact property-name match is removed; comments and unrelated
+    properties are preserved.
+    """
+    tag = normalize_tag(tag)
+
+    if not tag or re.search(r"\s", tag):
+        return False
+
+    if not TAGS_CACHE_PATH.exists():
+        return False
+
+    if not TAGS_CACHE_PATH.is_file():
+        return False
+
+    try:
+        lines = TAGS_CACHE_PATH.read_text(
+            encoding="utf-8"
+        ).splitlines(keepends=True)
+
+        filtered: list[str] = []
+        removed = False
+
+        for line in lines:
+            stripped = line.strip()
+
+            if (
+                stripped
+                and not stripped.startswith("#")
+                and "=" in stripped
+            ):
+                name, _comment = stripped.split(
+                    "=",
+                    1,
+                )
+
+                if normalize_tag(name) == tag:
+                    removed = True
+                    continue
+
+            filtered.append(line)
+
+        if not removed:
+            return False
+
+        TAGS_CACHE_PATH.write_text(
+            "".join(filtered),
+            encoding="utf-8",
+        )
+
+        return True
+
+    except OSError as exc:
+        print(
+            f"[WARNING] Could not remove tag "
+            f"'{tag}' from cache "
+            f"{TAGS_CACHE_PATH}: {exc}",
+            flush=True,
+        )
+
+        return False
+
+
 def register_box_tags(box: Box) -> None:
     for tag in box.tags:
         ensure_tag_in_cache(tag)
@@ -478,6 +631,56 @@ class BoxTableLineEdit(QLineEdit):
             Qt.Key.Key_Return,
             Qt.Key.Key_Enter,
         ):
+            completer = self.completer()
+
+            if (
+                completer is not None
+                and completer.popup().isVisible()
+            ):
+                index = completer.currentIndex()
+
+                if index.isValid():
+                    completion = (
+                        completer.currentCompletion()
+                    )
+
+                    if completion:
+                        text = self.text()
+                        cursor = self.cursorPosition()
+
+                        # Find the complete word currently
+                        # being autocompleted.
+                        start = text.rfind(
+                            " ",
+                            0,
+                            cursor,
+                        ) + 1
+
+                        end = text.find(
+                            " ",
+                            cursor,
+                        )
+
+                        if end == -1:
+                            end = len(text)
+
+                        self.setText(
+                            completion
+                        )
+
+                        self.setCursorPosition(
+                            start + len(completion)
+                        )
+
+                        completer.popup().hide()
+
+                        event.accept()
+                        return
+
+        if key in (
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
             self.finish_and_move(
                 forward=not shift,
                 same_column=True,
@@ -507,7 +710,7 @@ class BoxTableLineEdit(QLineEdit):
             return
 
         # Commit the current editor before moving.
-        self.editingFinished.emit()
+        # self.editingFinished.emit()
 
         target = table.find_editable_cell(
             row=row,
@@ -521,30 +724,10 @@ class BoxTableLineEdit(QLineEdit):
 
         target_row, target_column = target
 
-        table.setCurrentCell(
+        table.start_editing_cell(
             target_row,
             target_column,
         )
-
-        item = table.item(
-            target_row,
-            target_column,
-        )
-
-        if item is None:
-            return
-
-        table.editItem(item)
-
-        editor = table.findChild(
-            BoxTableLineEdit
-        )
-
-        if editor is not None:
-            editor.setFocus(
-                Qt.FocusReason.OtherFocusReason
-            )
-            editor.selectAll()
 
 class BoxTableWidget(QTableWidget):
     """
@@ -556,6 +739,129 @@ class BoxTableWidget(QTableWidget):
         1,
         6,
     )
+
+    def keyPressEvent(
+        self,
+        event: QKeyEvent,
+    ) -> None:
+        key = event.key()
+        modifiers = event.modifiers()
+
+        shift = bool(
+            modifiers
+            & Qt.KeyboardModifier.ShiftModifier
+        )
+
+        if key in (
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
+            row = self.currentRow()
+            column = self.currentColumn()
+
+            if (
+                row >= 0
+                and column in self.EDITABLE_COLUMNS
+            ):
+                # Commit/close whatever editor is currently active.
+                self.closePersistentEditor(
+                    self.item(row, column)
+                )
+
+                target = self.find_editable_cell(
+                    row=row,
+                    column=column,
+                    forward=not shift,
+                    same_column=True,
+                )
+
+                if target is not None:
+                    target_row, target_column = target
+
+                    self.setCurrentCell(
+                        target_row,
+                        target_column,
+                    )
+
+                    item = self.item(
+                        target_row,
+                        target_column,
+                    )
+
+                    if item is not None:
+                        self.editItem(item)
+
+                event.accept()
+                return
+
+        if key in (
+            Qt.Key.Key_Tab,
+            Qt.Key.Key_Backtab,
+        ):
+            row = self.currentRow()
+            column = self.currentColumn()
+
+            if (
+                row >= 0
+                and column in self.EDITABLE_COLUMNS
+            ):
+                target = self.find_editable_cell(
+                    row=row,
+                    column=column,
+                    forward=not shift,
+                    same_column=False,
+                )
+
+                if target is not None:
+                    target_row, target_column = target
+
+                    self.setCurrentCell(
+                        target_row,
+                        target_column,
+                    )
+
+                    item = self.item(
+                        target_row,
+                        target_column,
+                    )
+
+                    if item is not None:
+                        self.editItem(item)
+
+                event.accept()
+                return
+
+        super().keyPressEvent(event)
+
+    def start_editing_cell(
+        self,
+        row: int,
+        column: int,
+    ) -> None:
+        item = self.item(
+            row,
+            column,
+        )
+
+        if item is None:
+            return
+
+        self.setCurrentCell(
+            row,
+            column,
+        )
+
+        self.editItem(item)
+
+        editor = self.findChild(
+            BoxTableLineEdit
+        )
+
+        if editor is not None:
+            editor.setFocus(
+                Qt.FocusReason.OtherFocusReason
+            )
+            editor.selectAll()
 
     def find_editable_cell(
         self,
@@ -679,6 +985,7 @@ class BoxTableWidget(QTableWidget):
 
         return None
 
+
 class BoxTableDelegate(QStyledItemDelegate):
     """
     Delegate for editable Name and Tags fields.
@@ -721,25 +1028,39 @@ class BoxTableDelegate(QStyledItemDelegate):
                 editor,
             )
 
-            completer = QCompleter(
+            completer = WordCompleter(
                 model,
                 editor,
             )
 
-            completer.setCaseSensitivity(
-                Qt.CaseSensitivity.CaseInsensitive
-            )
-
-            completer.setFilterMode(
-                Qt.MatchFlag.MatchContains
-            )
-
-            completer.setCompletionMode(
-                QCompleter.CompletionMode.PopupCompletion
-            )
-
             editor.setCompleter(
                 completer
+            )
+
+            def update_completion_prefix(_text):
+                cursor = editor.cursorPosition()
+                current_text = editor.text()
+
+                start, _end = completer._word_bounds(
+                    current_text,
+                    cursor,
+                )
+
+                prefix = current_text[
+                    start:cursor
+                ]
+
+                completer.setCompletionPrefix(
+                    prefix
+                )
+
+                if prefix:
+                    completer.complete()
+                else:
+                    completer.popup().hide()
+
+            editor.textEdited.connect(
+                update_completion_prefix
             )
 
         return editor
@@ -3303,40 +3624,35 @@ class MainWindow(QMainWindow):
             self.box_table.horizontalHeader()
         )
 
+        header.setSectionsMovable(True)
+        header.moveSection(6, 2)
+
+        # Keep every column interactively resizable.  Set useful
+        # initial widths, but let the user drag any header divider.
         header.setSectionResizeMode(
-            0,
-            QHeaderView.ResizeMode.ResizeToContents,
+            QHeaderView.ResizeMode.Interactive
+        )
+        header.setStretchLastSection(
+            False
         )
 
-        header.setSectionResizeMode(
-            1,
-            QHeaderView.ResizeMode.Stretch,
-        )
+        initial_widths = [
+            60,   # Index
+            220,  # Name
+            80,   # PosX
+            80,   # PosY
+            80,   # Width
+            80,   # Height
+            260,  # Tags
+        ]
 
-        header.setSectionResizeMode(
-            2,
-            QHeaderView.ResizeMode.ResizeToContents,
-        )
-
-        header.setSectionResizeMode(
-            3,
-            QHeaderView.ResizeMode.ResizeToContents,
-        )
-
-        header.setSectionResizeMode(
-            4,
-            QHeaderView.ResizeMode.ResizeToContents,
-        )
-
-        header.setSectionResizeMode(
-            5,
-            QHeaderView.ResizeMode.ResizeToContents,
-        )
-
-        header.setSectionResizeMode(
-            6,
-            QHeaderView.ResizeMode.Stretch,
-        )
+        for column, width in enumerate(
+            initial_widths
+        ):
+            header.resizeSection(
+                column,
+                width,
+            )
 
         self.box_table_delegate = BoxTableDelegate(
             self.box_table,
@@ -3345,11 +3661,6 @@ class MainWindow(QMainWindow):
 
         self.box_table.setItemDelegateForColumn(
             1,
-            self.box_table_delegate,
-        )
-
-        self.box_table.setItemDelegateForColumn(
-            6,
             self.box_table_delegate,
         )
 
@@ -3400,6 +3711,16 @@ class MainWindow(QMainWindow):
             "Delete selected box"
         )
 
+        self.tag_cache_list = QListWidget()
+
+        self.tag_cache_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+
+        self.remove_tag_button = QPushButton(
+            "Remove selected tag"
+        )
+
         self.only_export_data_checkbox = (
             QCheckBox(
                 "Export data only"
@@ -3428,6 +3749,14 @@ class MainWindow(QMainWindow):
             False
         )
 
+        self.remove_tag_button.clicked.connect(
+            self.remove_selected_tag
+        )
+
+        self.tag_cache_list.itemSelectionChanged.connect(
+            self.update_remove_tag_button
+        )
+
         self.cancel_button.clicked.connect(
             self.cancel_changes
         )
@@ -3450,6 +3779,7 @@ class MainWindow(QMainWindow):
 
         self.build_ui()
         self.refresh_file_list()
+        self.refresh_tag_cache_list()
 
         if self.pdfs:
             self.file_list.setCurrentRow(
@@ -3461,8 +3791,8 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def get_available_tags(self) -> list[str]:
-        # Reload so newly created tags immediately appear in
-        # autocomplete editors.
+        # Reload so newly created/removed tags immediately appear in
+        # autocomplete editors and in the cache list.
         self.available_tags = (
             load_tag_cache()
         )
@@ -3470,6 +3800,48 @@ class MainWindow(QMainWindow):
         return list(
             self.available_tags
         )
+
+    def refresh_tag_cache_list(self) -> None:
+        tags = load_tag_cache()
+
+        self.available_tags = list(tags)
+
+        self.tag_cache_list.blockSignals(
+            True
+        )
+
+        self.tag_cache_list.clear()
+
+        for tag in tags:
+            self.tag_cache_list.addItem(tag)
+
+        self.tag_cache_list.blockSignals(
+            False
+        )
+
+        self.update_remove_tag_button()
+
+    def update_remove_tag_button(self) -> None:
+        self.remove_tag_button.setEnabled(
+            self.tag_cache_list.currentItem()
+            is not None
+        )
+
+    def remove_selected_tag(self) -> None:
+        item = self.tag_cache_list.currentItem()
+
+        if item is None:
+            return
+
+        tag = item.text().strip()
+
+        if not tag:
+            return
+
+        if not remove_tag_from_cache(tag):
+            return
+
+        self.refresh_tag_cache_list()
 
     def register_tags_from_box(
         self,
@@ -3480,9 +3852,7 @@ class MainWindow(QMainWindow):
                 tag
             )
 
-        self.available_tags = (
-            load_tag_cache()
-        )
+        self.refresh_tag_cache_list()
 
     def parse_and_register_tags(
         self,
@@ -3497,9 +3867,7 @@ class MainWindow(QMainWindow):
                 tag
             )
 
-        self.available_tags = (
-            load_tag_cache()
-        )
+        self.refresh_tag_cache_list()
 
         return tags
 
@@ -3616,11 +3984,24 @@ class MainWindow(QMainWindow):
 
         right_layout.addWidget(
             self.box_table,
-            1,
+            3,
         )
 
         right_layout.addWidget(
             self.delete_button
+        )
+
+        right_layout.addWidget(
+            QLabel("<b>Tags cache</b>")
+        )
+
+        right_layout.addWidget(
+            self.tag_cache_list,
+            1,
+        )
+
+        right_layout.addWidget(
+            self.remove_tag_button
         )
 
         splitter = QSplitter(

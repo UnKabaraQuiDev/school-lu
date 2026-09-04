@@ -1,5 +1,5 @@
 Index,Name,PosX,PosY,Width,Height,Tags
-1,Question 1,58.5189,138.0784,495.1097,240.6509,
-2,Question 2,59.1765,389.2496,494.4522,362.949,
-3,Question 3,59.1765,1017.8351,492.4797,356.3738,
-4,Question 4,59.834,1394.4524,491.8221,129.5307,
+1,Question 1,58.5189,138.0784,495.1097,240.6509,nbr_complexe eq_complexe
+2,Question 2,59.1765,389.2496,494.4522,362.949,graphique geo_analytique
+3,Question 3,59.1765,1017.8351,492.4797,356.3738,probabilites
+4,Question 4,59.834,1394.4524,491.8221,129.5307,geo_analytique
