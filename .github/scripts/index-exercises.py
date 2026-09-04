@@ -101,6 +101,36 @@ def get_source(folder: Path) -> str:
     return rel(pdf)
 
 
+def parse_tags(value: str | None) -> list[str]:
+    """
+    Parse the Tags column.
+
+    Tags are stored as SPACE-separated values.
+    """
+    if not value:
+        return []
+
+    tags: list[str] = []
+
+    for tag in re.split(r"\s+", value.strip()):
+        if tag and tag not in tags:
+            tags.append(tag)
+
+    return tags
+
+
+def format_tags(tags: set[str]) -> str:
+    """
+    Format tags as SPACE-separated values.
+    """
+    return " ".join(
+        sorted(
+            tags,
+            key=str.lower,
+        )
+    )
+
+
 def main():
     exams = defaultdict(dict)
 
@@ -109,7 +139,10 @@ def main():
         match = DIR_PATTERN.match(folder.name)
 
         if not match:
-            print(f"Warning: Skipping unrecognized directory: {rel(folder)}")
+            print(
+                f"Warning: Skipping unrecognized directory: "
+                f"{rel(folder)}"
+            )
             continue
 
         data = match.groupdict()
@@ -119,14 +152,26 @@ def main():
             data["subject"],
             data["year"],
             data["season"],
-            "REP" if data["retry"] and data["retry"] == "_REP" else "AJOU" if data["retry"] and data["retry"] == "_AJOU" else "NORMAL",
+            (
+                "REP"
+                if data["retry"]
+                and data["retry"] == "_REP"
+                else "AJOU"
+                if data["retry"]
+                and data["retry"] == "_AJOU"
+                else "NORMAL"
+            ),
         )
-        
+
         exams[key][data["type"].upper()] = folder
 
     output = EXAMS_DIR / "exercises.csv"
 
-    with output.open("w", newline="", encoding="utf-8") as f:
+    with output.open(
+        "w",
+        newline="",
+        encoding="utf-8",
+    ) as f:
         writer = csv.writer(f)
 
         writer.writerow(
@@ -143,15 +188,102 @@ def main():
                 "Additive box",
                 "Subtractive boxes",
                 "Attachment",
+                "Tags",
             ]
         )
 
-        for (section, subject, year, season, subtype), files in sorted(exams.items()):
+        for (
+            section,
+            subject,
+            year,
+            season,
+            subtype,
+        ), files in sorted(exams.items()):
+
+            # ----------------------------------------------------------
+            # First pass:
+            #
+            # Collect ALL tags belonging to each exercise across both
+            # ENONCE and CORRIGE.
+            #
+            # Exercise identity is ONLY:
+            #
+            #   Section
+            #   Subject
+            #   Year
+            #   Subtype
+            #   Season
+            #   Exercise Index
+            #
+            # Qualifier, alternative index, boxes and attachment are
+            # deliberately ignored.
+            # ----------------------------------------------------------
+
+            exercise_tags: dict[
+                tuple[str, str, str, str, str, int],
+                set[str],
+            ] = defaultdict(set)
+
             for document_type, folder in sorted(files.items()):
                 index_path = folder / "index.csv"
 
                 if not index_path.exists():
-                    print(f"Warning: Missing index.csv: {rel(index_path)}")
+                    print(
+                        f"Warning: Missing index.csv: "
+                        f"{rel(index_path)}"
+                    )
+                    continue
+
+                boxes = read_boxes(index_path)
+
+                additive_boxes = {
+                    index: rows
+                    for index, rows in boxes.items()
+                    if index > 0
+                }
+
+                for additive_rows in additive_boxes.values():
+                    for additive_row in additive_rows:
+                        name = additive_row.get(
+                            "Name",
+                            "",
+                        )
+
+                        exercise_index = get_exercise_index(
+                            name,
+                            index_path,
+                        )
+
+                        if exercise_index is None:
+                            continue
+
+                        exercise_key = (
+                            section,
+                            subject,
+                            year,
+                            subtype,
+                            season,
+                            exercise_index,
+                        )
+
+                        exercise_tags[
+                            exercise_key
+                        ].update(
+                            parse_tags(
+                                additive_row.get("Tags")
+                            )
+                        )
+
+            # ----------------------------------------------------------
+            # Second pass:
+            #
+            # Write all rows, using the tags collected above.
+            # ----------------------------------------------------------
+
+            for document_type, folder in sorted(files.items()):
+                index_path = folder / "index.csv"
+
+                if not index_path.exists():
                     continue
 
                 boxes = read_boxes(index_path)
@@ -173,29 +305,71 @@ def main():
 
                 row_count = 0
 
-                for box_index, additive_rows in sorted(additive_boxes.items()):
+                for box_index, additive_rows in sorted(
+                    additive_boxes.items()
+                ):
                     for additive_row in additive_rows:
-                        name = additive_row["Name"]
+                        name = additive_row.get(
+                            "Name",
+                            "",
+                        )
 
-                        exercise_index = get_exercise_index(name, index_path)
+                        exercise_index = get_exercise_index(
+                            name,
+                            index_path,
+                        )
 
                         if exercise_index is None:
                             continue
 
-                        alternative_index = get_alternative_index(name)
+                        alternative_index = get_alternative_index(
+                            name
+                        )
 
                         subtractive = []
 
                         for subtractive_row in subtractive_boxes.get(
-                            box_index, []
+                            box_index,
+                            [],
                         ):
-                            subtractive.append(format_box(subtractive_row))
+                            subtractive.append(
+                                format_box(
+                                    subtractive_row
+                                )
+                            )
 
-                        additive_box = format_box(additive_row)
-                        subtractive_boxes_value = ";".join(subtractive)
+                        additive_box = format_box(
+                            additive_row
+                        )
 
-                        attachment_path = folder / f"{box_index}.webp"
-                        attachment = rel(attachment_path)
+                        subtractive_boxes_value = ";".join(
+                            subtractive
+                        )
+
+                        attachment_path = (
+                            folder
+                            / f"{box_index}.webp"
+                        )
+
+                        attachment = rel(
+                            attachment_path
+                        )
+
+                        exercise_key = (
+                            section,
+                            subject,
+                            year,
+                            subtype,
+                            season,
+                            exercise_index,
+                        )
+
+                        tags = format_tags(
+                            exercise_tags.get(
+                                exercise_key,
+                                set(),
+                            )
+                        )
 
                         writer.writerow(
                             [
@@ -206,11 +380,18 @@ def main():
                                 season,
                                 source,
                                 exercise_index,
-                                "STATEMENT" if document_type == "ENONCE" else "SOLUTION" if document_type == "CORRIGE" else "???",
+                                (
+                                    "STATEMENT"
+                                    if document_type == "ENONCE"
+                                    else "SOLUTION"
+                                    if document_type == "CORRIGE"
+                                    else "???"
+                                ),
                                 alternative_index,
                                 additive_box,
                                 subtractive_boxes_value,
                                 attachment,
+                                tags,
                             ]
                         )
 
