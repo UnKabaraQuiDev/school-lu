@@ -32,10 +32,7 @@ CSV_FILE = DATA_DIR / "exams" / "exercises.csv"
 
 EXAM_TEMPLATE_FILE = TEMPLATE_DIR / "exam.template.html"
 EXERCISES_TEMPLATE_FILE = TEMPLATE_DIR / "exercises.template.html"
-EXERCISE_SOLUTION_TEMPLATE_FILE = TEMPLATE_DIR / "exercise-solution.template.html"
-EXERCISE_MISSION_TEMPLATE_FILE = (
-    TEMPLATE_DIR / "exercise-mission_statement.template.html"
-)
+EXERCISE_IMAGE_TEMPLATE_FILE = TEMPLATE_DIR / "exercise-image.template.html"
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +213,7 @@ def is_mission_statement(row: dict) -> bool:
 
 def create_exercise_image(
     row: dict,
-    template: str,
+    template,
     image_type: str,
 ) -> str:
     """
@@ -233,11 +230,16 @@ def create_exercise_image(
 
     if image_type == "mission":
         alt = f"Exercise {index} mission statement"
+        border_color = "blue-200"
+        bg_color = "blue-100"
     else:
         if alternative:
             alt = f"Exercise {index} solution #{alternative}"
         else:
             alt = f"Exercise {index} solution"
+        border_color = "green-200"
+        bg_color = "green-100"
+    
 
     return (
         template
@@ -249,6 +251,14 @@ def create_exercise_image(
             "{{IMG_ALT}}",
             escape_attribute(alt),
         )
+        .replace(
+            "{{BORDER_COLOR}}",
+            border_color,
+        )
+        .replace(
+            "{{BG_COLOR}}",
+            bg_color,
+        )
     )
 
 
@@ -259,8 +269,7 @@ def create_exercise_image(
 def create_exercise(
     rows: list[dict],
     exercise_template: str,
-    solution_template: str,
-    mission_template: str,
+    image_template: str,
 ) -> str:
     """
     Generate one exercise.
@@ -293,7 +302,7 @@ def create_exercise(
             content_parts.append(
                 create_exercise_image(
                     row,
-                    mission_template,
+                    image_template,
                     "mission",
                 )
             )
@@ -304,7 +313,7 @@ def create_exercise(
             content_parts.append(
                 create_exercise_image(
                     row,
-                    solution_template,
+                    image_template,
                     "solution",
                 )
             )
@@ -316,7 +325,7 @@ def create_exercise(
             content_parts.append(
                 create_exercise_image(
                     row,
-                    solution_template,
+                    image_template,
                     "solution",
                 )
             )
@@ -339,8 +348,7 @@ def create_exercise(
 def create_exercises(
     rows: list[dict],
     exercise_template: str,
-    solution_template: str,
-    mission_template: str,
+    image_template: str
 ) -> str:
     """
     Group rows by exercise index + alternative index and generate
@@ -350,8 +358,7 @@ def create_exercises(
 
     for row in rows:
         key = (
-            exercise_index(row),
-            alternative_index(row),
+            exercise_index(row)
         )
 
         exercises.setdefault(key, []).append(row)
@@ -363,8 +370,7 @@ def create_exercises(
             create_exercise(
                 exercise_rows,
                 exercise_template,
-                solution_template,
-                mission_template,
+                image_template
             )
         )
 
@@ -392,8 +398,7 @@ def create_exam(
     rows: list[dict],
     exam_template: str,
     exercise_template: str,
-    solution_template: str,
-    mission_template: str,
+    image_template: str,
 ) -> Path:
     section, subject, year, subtype, season = exam
 
@@ -402,8 +407,7 @@ def create_exam(
     exercises = create_exercises(
         rows,
         exercise_template,
-        solution_template,
-        mission_template,
+        image_template,
     )
 
     html = (
@@ -445,8 +449,7 @@ def main() -> None:
 
     exam_template = read_template(EXAM_TEMPLATE_FILE)
     exercise_template = read_template(EXERCISES_TEMPLATE_FILE)
-    solution_template = read_template(EXERCISE_SOLUTION_TEMPLATE_FILE)
-    mission_template = read_template(EXERCISE_MISSION_TEMPLATE_FILE)
+    image_template = read_template(EXERCISE_IMAGE_TEMPLATE_FILE)
 
     # ---------------------------------------------------------------
     # Load CSV and group rows by exam.
@@ -498,8 +501,7 @@ def main() -> None:
             rows,
             exam_template,
             exercise_template,
-            solution_template,
-            mission_template,
+            image_template,
         )
 
         generated += 1

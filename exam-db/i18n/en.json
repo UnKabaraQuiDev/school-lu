@@ -18,12 +18,12 @@
     "all.pageTitle": "All exams",
     "all.title": "All exams",
     "view-exercises": "View exercises",
-    "common.close": "<translation missing>",
-    "exams.documents": "<translation missing>",
-    "exercises.exercise": "<translation missing>",
-    "exercises.next_exercise": "<translation missing>",
-    "exercises.next_image": "<translation missing>",
-    "exercises.previous_exercise": "<translation missing>",
-    "exercises.previous_image": "<translation missing>",
-    "exercises.title": "<translation missing>"
+    "common.close": "❌",
+    "exams.documents": "Linked documents",
+    "exercises.exercise": "Exercise",
+    "exercises.next_exercise": "⬇",
+    "exercises.next_image": "➡",
+    "exercises.previous_exercise": "⬆",
+    "exercises.previous_image": "⬅",
+    "exercises.title": "Exam content"
 }
