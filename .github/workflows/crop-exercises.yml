@@ -16,7 +16,7 @@ concurrency:
 jobs:
   check:
     name: Check whether exams changed
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
 
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -82,7 +82,7 @@ jobs:
     needs: check
     if: needs.check.outputs.should_run == 'true'
 
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
 
     steps:
       - name: Checkout repository
