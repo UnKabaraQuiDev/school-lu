@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from __future__ import annotations
 
 import argparse
@@ -10,6 +12,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
+import traceback
 
 import pymupdf
 
@@ -102,7 +105,7 @@ INDEX_HEADERS = [
     "Tags",
 ]
 
-DEFAULT_OUTPUT_DPI = 72.0
+DEFAULT_OUTPUT_DPI = 72.0 * 2
 
 
 @dataclass
@@ -949,9 +952,7 @@ def clear_output_directory(
     )
 
     for child in output_dir.iterdir():
-        if child.is_dir():
-            shutil.rmtree(child)
-        else:
+        if child.is_file() and child.suffix.lower() == ".webp":
             child.unlink()
 
     return output_dir
@@ -1137,6 +1138,9 @@ def run_headless(
                     f"{pdf_path}: {exc}",
                     flush=True,
                 )
+                
+                traceback.print_exc()
+                return
 
     print(
         (
@@ -4720,10 +4724,6 @@ class MainWindow(QMainWindow):
             self.only_export_data_checkbox.isChecked()
         )
 
-        use_cached_images = (
-            self.load_cached_images_checkbox.isChecked()
-        )
-
         if only_export_data:
             return
         
@@ -5270,11 +5270,15 @@ def get_raster_page_dpi(
         xref = image_info[0]
 
         try:
-            image_rects = (
-                page.get_image_rects(
-                    xref
+            image_rects = [
+                QRectF(
+                    rect.x0,
+                    rect.y0,
+                    rect.width,
+                    rect.height,
                 )
-            )
+                for rect in page.get_image_rects(xref)
+            ]
         except Exception:
             continue
 
@@ -5304,7 +5308,12 @@ def get_raster_page_dpi(
         for image_rect in image_rects:
             intersection = (
                 image_rect.intersected(
-                    page_rect
+                    QRectF(
+                        page_rect.x0,
+                        page_rect.y0,
+                        page_rect.width,
+                        page_rect.height,
+                    )
                 )
             )
 
@@ -5419,9 +5428,7 @@ def get_pdf_output_scale(
             ]
         ) / 2.0
 
-    return (
-        dpi / 72.0
-    )
+    return min((dpi / 72.0), 2.5)
 
 
 def export_box(

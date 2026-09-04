@@ -1,5 +1,5 @@
-Index,Name,PosX,PosY,Width,Height
-1,Question 1,65,172,458,197
-2,Question 2,62,403,462,293
-3,Question 3,59,1013,468,281
-4,Question 4,60,1328.8,468,212
+Index,Name,PosX,PosY,Width,Height,Tags
+1,Question 1,65,172,458,197,
+2,Question 2,62,403,462,293,
+3,Question 3,59,1013,468,281,
+4,Question 4,60,1328.8,468,212,
