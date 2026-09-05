@@ -2,7 +2,7 @@ name: Crop exercises
 
 on:
   workflow_dispatch:
-  scheduled:
+  schedule:
     - cron: "0 0 * * *"
 #  workflow_run:
 #    workflows: "Generate Exam & Exercises Index"
