@@ -4,7 +4,6 @@ from pathlib import Path
 import subprocess
 import csv
 import re
-from collections import defaultdict
 
 
 # ============================================================
@@ -13,8 +12,14 @@ from collections import defaultdict
 
 ROOT_DIR = Path(
     subprocess.check_output(
-        ["git", "-C", str(Path(__file__).resolve().parent), "rev-parse", "--show-toplevel"],
-        text=True
+        [
+            "git",
+            "-C",
+            str(Path(__file__).resolve().parent),
+            "rev-parse",
+            "--show-toplevel",
+        ],
+        text=True,
     ).strip()
 )
 
@@ -28,10 +33,9 @@ CSV_HEADER = [
     "Season",
     "Subtype",
     "Name",
-    "Mission statement",
-    "Solution",
-    "Data",
-    "Oral"
+    "Qualifier",
+    "Attachement",
+    "Source",
 ]
 
 
@@ -39,14 +43,13 @@ CSV_HEADER = [
 # Regex
 # ============================================================
 
-# Example:
+# Examples:
+#
 # CB_INFOR_2006_ETE_PARTIE_PRATIQUE_CORRIGE.pdf
-#
 # CB_4LANG_CHINO_2023_ETE_ENONCE.pdf
-#
 # CA_LLCO_MALA_PSYA_ALLEM_2005_ETE_ENONCE.pdf
 #
-# The subject is taken as the token immediately before the year.
+# The subject is everything between the section and the year.
 
 FILENAME_PATTERN = re.compile(
     r"""
@@ -71,13 +74,30 @@ FILENAME_PATTERN = re.compile(
 
 
 # ============================================================
+# Type mapping
+# ============================================================
+
+TYPE_MAPPING = {
+    "ENONCE": "STATEMENT",
+    "CORRIGE": "SOLUTION",
+    "ORAL": "ORAL",
+    "DATA": "DATA",
+}
+
+
+# ============================================================
 # Helpers
 # ============================================================
 
 def print_ambiguity(path, reason):
     """Print an ambiguous or invalid file."""
 
-    print(f"[SKIP] {path.relative_to(ROOT_DIR)}")
+    try:
+        display_path = path.relative_to(ROOT_DIR)
+    except ValueError:
+        display_path = path
+
+    print(f"[SKIP] {display_path}")
     print(f"       {reason}")
 
 
@@ -92,15 +112,36 @@ def parse_filename(path):
     match = FILENAME_PATTERN.match(path.name)
 
     if not match:
-        print_ambiguity(path, "Filename does not match the expected pattern.")
+        print_ambiguity(
+            path,
+            "Filename does not match the expected pattern.",
+        )
         return None
 
     prefix = match.group("prefix")
     year = match.group("year")
     season = match.group("season").upper()
-    sub_type = "REP" if match.group("retry") and match.group("retry") == "_REP" else "AJOU" if match.group("retry") and match.group("retry") == "_AJOU" else "NORMAL"
+
+    retry = match.group("retry")
+
+    if retry == "_REP":
+        subtype = "REP"
+    elif retry == "_AJOU":
+        subtype = "AJOU"
+    else:
+        subtype = "NORMAL"
+
     name = match.group("name") or ""
-    file_type = match.group("type").upper()
+    name = name.upper()
+
+    filename_type = match.group("type").upper()
+
+    if filename_type not in TYPE_MAPPING:
+        print_ambiguity(
+            path,
+            f"Unknown file type: {filename_type}",
+        )
+        return None
 
     prefix_parts = prefix.split("_")
 
@@ -116,42 +157,17 @@ def parse_filename(path):
     if len(prefix_parts) < 2:
         print_ambiguity(
             path,
-            f"Could not determine Section and Subject from '{prefix}'."
+            f"Could not determine Section and Subject from '{prefix}'.",
         )
         return None
 
     section = prefix_parts[0]
-
-    # The subject is the token immediately before the year.
-    #
-    # This handles:
-    #
-    # CB_INFOR
-    #              -> INFOR
-    #
-    # CB_4LANG_CHINO
-    #              -> CHINO
-    #
-    # CA_LLCO_MALA_PSYA_ALLEM
-    #              -> ALLEM
-
     subject = "_".join(prefix_parts[1:])
 
     if not section or not subject:
         print_ambiguity(
             path,
-            "Section or Subject is empty."
-        )
-        return None
-
-    # Name may contain underscores, which we preserve.
-    name = name.upper()
-
-    # Only allow the expected file types.
-    if file_type not in {"ENONCE", "CORRIGE", "ORAL", "DATA"}:
-        print_ambiguity(
-            path,
-            f"Unknown file type: {file_type}"
+            "Section or Subject is empty.",
         )
         return None
 
@@ -160,87 +176,71 @@ def parse_filename(path):
         "Subject": subject.upper(),
         "Year": year,
         "Season": season,
-        "Subtype": sub_type,
+        "Subtype": subtype,
         "Name": name,
-        "Type": file_type,
-        "Path": path.relative_to(ROOT_DIR).as_posix(),
+        "Qualifier": TYPE_MAPPING[filename_type],
     }
 
 
-def get_directory_candidates(path):
+def make_key(parsed):
     """
-    Try to get Section and Subject from the directory structure.
+    Convert parsed exam metadata to the source key format.
 
     Example:
 
-        exams/
-            CB/
-                CB_INFOR/
-                    file.pdf
-
-    gives:
-
-        Section = CB
-        Subject = INFOR
-
-    This is only used as a fallback.
+        CB:INFOR:2006:ETE:NORMAL:PARTIE_PRATIQUE:SOLUTION
     """
 
+    return ":".join(
+        [
+            parsed["Section"],
+            parsed["Subject"],
+            parsed["Year"],
+            parsed["Season"],
+            parsed["Subtype"],
+            parsed["Name"],
+            parsed["Qualifier"],
+        ]
+    )
+
+
+def get_source(path):
+    """
+    If path is a symlink, resolve its target and parse the target
+    filename again.
+
+    Returns:
+        source key or an empty string.
+    """
+
+    if not path.is_symlink():
+        return ""
+
     try:
-        relative = path.relative_to(EXAM_DIR)
-    except ValueError:
-        return None
+        target = path.resolve(strict=True)
+    except FileNotFoundError:
+        print_ambiguity(
+            path,
+            "Symlink target does not exist.",
+        )
+        return ""
 
-    parts = relative.parts
+    parsed = parse_filename(target)
 
-    # Expected:
-    #
-    # Section/
-    #     Subject/
-    #         file.pdf
+    if parsed is None:
+        print_ambiguity(
+            path,
+            f"Could not decode symlink target '{target.name}'.",
+        )
+        return ""
 
-    if len(parts) < 3:
-        return None
-
-    section = parts[0]
-    subject_dir = parts[1]
-
-    # Remove the section prefix from the directory name.
-    #
-    # CB_INFOR -> INFOR
-    # CA_ALLEM -> ALLEM
-    #
-    # But for directories such as:
-    # CB_CHINO_4LANG
-    #
-    # we cannot safely assume the subject from the directory.
-
-    prefix = section + "_"
-
-    if subject_dir.startswith(prefix):
-        possible_subject = subject_dir[len(prefix):]
-
-        if "_" not in possible_subject:
-            return {
-                "Section": section.upper(),
-                "Subject": possible_subject.upper(),
-            }
-
-    return None
+    return make_key(parsed)
 
 
 def parse_exam(path):
-    """Parse an exam PDF and return its metadata."""
+    """Parse an exam attachment."""
 
-    result = parse_filename(path)
-
-    if result is not None:
-        return result
-
-    # Filename parsing failed.
-    # Try the directory structure.
-
-    return None
+    return parse_filename(path)
 
 
 # ============================================================
@@ -249,83 +249,61 @@ def parse_exam(path):
 
 def collect_exams():
     """
-    Scan all PDFs and group ENONCE/CORRIGE files
-    belonging to the same exam.
+    Scan all PDFs and ZIP files.
+
+    Each file becomes one CSV row.
     """
 
-    exams = defaultdict(dict)
+    rows = []
 
-    pdf_files = sorted(
+    files = sorted(
         list(EXAM_DIR.rglob("*.pdf"))
         + list(EXAM_DIR.rglob("*.zip"))
     )
 
-    print(f"Found {len(pdf_files)} files.")
+    print(f"Found {len(files)} files.")
 
-    for path in pdf_files:
-
+    for path in files:
         parsed = parse_exam(path)
 
         if parsed is None:
             continue
 
-        key = (
-            parsed["Section"],
-            parsed["Subject"],
-            parsed["Year"],
-            parsed["Season"],
-            parsed["Subtype"],
-            parsed["Name"],
-        )
-
-        file_type = parsed["Type"]
-
-        # Detect duplicate ENONCE/CORRIGE/ORAL/DATA files.
-        if file_type in exams[key]:
+        try:
+            attachment = path.relative_to(ROOT_DIR).as_posix()
+        except ValueError:
             print_ambiguity(
                 path,
-                f"Duplicate {file_type} for exam {key}."
+                "File is outside the repository root.",
             )
             continue
 
-        exams[key][file_type] = parsed["Path"]
+        source = get_source(path)
 
-    return exams
+        rows.append(
+            [
+                parsed["Section"],
+                parsed["Subject"],
+                parsed["Year"],
+                parsed["Season"],
+                parsed["Subtype"],
+                parsed["Name"],
+                parsed["Qualifier"],
+                attachment,
+                source,
+            ]
+        )
+
+    return rows
 
 
-def create_csv(exams):
-    """Write the grouped exams to db.csv."""
-
-    rows = []
-
-    for key in sorted(exams):
-
-        section, subject, year, season, subtype, name = key
-
-        files = exams[key]
-
-        mission_statement = files.get("ENONCE", "")
-        solution = files.get("CORRIGE", "")
-        data = files.get("DATA", "")
-        oral = files.get("ORAL", "")
-
-        rows.append([
-            section,
-            subject,
-            year,
-            season,
-            subtype,
-            name,
-            mission_statement,
-            solution,
-            data,
-            oral
-        ])
+def create_csv(rows):
+    """Write all exam attachments to db.csv."""
 
     with OUTPUT_FILE.open(
         "w",
         encoding="utf-8",
-        newline=""
+        newline="",
     ) as file:
 
         writer = csv.writer(file)
@@ -348,12 +326,12 @@ def main():
     print(f"Output: {OUTPUT_FILE}")
     print()
 
-    exams = collect_exams()
+    rows = collect_exams()
 
     print()
-    print(f"Grouped {len(exams)} exams.")
+    print(f"Collected {len(rows)} attachments.")
 
-    count = create_csv(exams)
+    count = create_csv(rows)
 
     print(f"Generated {count} rows.")
     print(f"CSV written to: {OUTPUT_FILE}")
