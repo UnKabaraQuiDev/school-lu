@@ -1,6 +1,7 @@
 name: Sync workflows
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
