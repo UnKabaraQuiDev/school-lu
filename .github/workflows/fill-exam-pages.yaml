@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  EXAM_TEMPLATES: "exercises all index sections subjects years"
+  EXAM_TEMPLATES: "exam all index sections subjects years"
 
 permissions:
   contents: write
