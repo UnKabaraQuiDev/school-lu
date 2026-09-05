@@ -2,9 +2,11 @@
 
 set -e
 
-python fill-exam-exercises.py
-python fill-exam-all.py
-python fill-exam-index.py
-python fill-exam-sections.py
-python fill-exam-subjects.py
-python fill-exam-years.py
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+python "$SCRIPT_DIR/fill-exam-exam.py"
+python "$SCRIPT_DIR/fill-exam-all.py"
+python "$SCRIPT_DIR/fill-exam-index.py"
+python "$SCRIPT_DIR/fill-exam-sections.py"
+python "$SCRIPT_DIR/fill-exam-subjects.py"
+python "$SCRIPT_DIR/fill-exam-years.py"

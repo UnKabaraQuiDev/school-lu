@@ -55,7 +55,7 @@ def create_table(csv_file):
                 <tr class="border-b last:border-b-0 hover:bg-gray-50">
 
                     <td class="px-4 py-3 font-medium">
-                        <a class="underline" href="{section}">{escape(section)}</a>
+                        <a class="underline" href="{section}/">{escape(section)}</a>
                     </td>
 
                 </tr>

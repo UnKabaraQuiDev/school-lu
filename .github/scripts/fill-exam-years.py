@@ -21,7 +21,15 @@ DATA_DIR = ROOT_DIR / "data"
 EXAMS_DB_DIR = ROOT_DIR / "exam-db"
 
 TEMPLATE_FILE = EXAMS_DB_DIR / "year.template.html"
-CSV_FILE = DATA_DIR / "exams/db.csv"
+CSV_FILE = DATA_DIR / "exams" / "db.csv"
+
+
+QUALIFIER_BUTTONS = {
+    "STATEMENT": ("Mission", "blue"),
+    "SOLUTION": ("Solution", "green"),
+    "DATA": ("Data", "purple"),
+    "ORAL": ("Oral", "cyan"),
+}
 
 
 def create_button(url, translation_key, color):
@@ -46,83 +54,86 @@ def conditional_button(url, text, color):
     return create_button(url, text, color)
 
 
-def create_table(rows):
-    """Create an HTML table from the exams belonging to one year."""
+def group_rows_by_exam(rows):
+    """
+    Group db.csv rows belonging to the same exam.
 
-    table_rows = []
+    db.csv now contains one row per attachment:
 
-    # An exam can have multiple CSV rows because it can have
-    # multiple exercises/attachments. Group those rows first.
+        Section,Subject,Year,Season,Subtype,Name,Qualifier,Attachement,Source
+
+    The exam identity is:
+
+        Season + Subtype + Name
+
+    Each attachment is stored using its Qualifier.
+    """
+
     exams = {}
 
     for row in rows:
-        season = row["Season"].strip()
-        subtype = row["Subtype"].strip()
-        name = row["Name"].strip()
+        season = row.get("Season", "").strip()
+        subtype = row.get("Subtype", "").strip()
+        name = row.get("Name", "").strip()
 
-        key = (season, subtype, name)
+        key = (
+            season,
+            subtype,
+            name,
+        )
 
         if key not in exams:
-            exams[key] = []
+            exams[key] = {
+                "Section": row.get("Section", "").strip(),
+                "Subject": row.get("Subject", "").strip(),
+                "Year": row.get("Year", "").strip(),
+                "Season": season,
+                "Subtype": subtype,
+                "Name": name,
+                "attachments": {},
+            }
 
-        exams[key].append(row)
+        qualifier = row.get("Qualifier", "").strip().upper()
+        attachment = row.get("Attachement", "").strip()
 
-    for (season, subtype, name), exam_rows in sorted(
-        exams.items(),
+        if qualifier and attachment:
+            exams[key]["attachments"][qualifier] = attachment
+
+    return exams
+
+
+def create_table(rows):
+    """Create an HTML table from the exams belonging to one year."""
+
+    exams = group_rows_by_exam(rows)
+
+    table_rows = []
+
+    for exam in sorted(
+        exams.values(),
         key=lambda item: (
-            item[0][0].casefold(),
-            item[0][1].casefold(),
-            item[0][2].casefold(),
+            item["Season"].casefold(),
+            item["Subtype"].casefold(),
+            item["Name"].casefold(),
         ),
     ):
-        attachments = []
+        season = exam["Season"]
+        subtype = exam["Subtype"]
+        name = exam["Name"]
+        section = exam["Section"]
+        subject = exam["Subject"]
+        year = exam["Year"]
+        attachments = exam["attachments"]
 
-        seen_attachments = set()
+        buttons = []
 
-        for row in exam_rows:
-            attachment_data = (
-                row["Mission statement"],
-                "Mission",
-                "blue",
-            )
+        for qualifier, (translation_key, color) in QUALIFIER_BUTTONS.items():
+            attachment = attachments.get(qualifier, "")
 
-            for url, translation_key, color in [
-                (
-                    row["Mission statement"],
-                    "Mission",
-                    "blue",
-                ),
-                (
-                    row["Solution"],
-                    "Solution",
-                    "green",
-                ),
-                (
-                    row["Data"],
-                    "Data",
-                    "purple",
-                ),
-                (
-                    row["Oral"],
-                    "Oral",
-                    "cyan",
-                ),
-            ]:
-                url = url.strip()
-
-                if not url:
-                    continue
-
-                key = (url, translation_key)
-
-                if key in seen_attachments:
-                    continue
-
-                seen_attachments.add(key)
-
-                attachments.append(
-                    create_button(
-                        url,
+            if attachment:
+                buttons.append(
+                    conditional_button(
+                        attachment,
                         translation_key,
                         color,
                     )
@@ -135,14 +146,23 @@ def create_table(rows):
 
         exercises_path = (
             EXAMS_DB_DIR
-            / exam_rows[0]["Section"]
-            / exam_rows[0]["Subject"]
-            / exam_rows[0]["Year"]
-            / exercises_url
+            / section
+            / subject
+            / year
+            / f"{season}_{subtype}"
             / "index.html"
         )
 
         include_exercises = exercises_path.exists()
+
+        if include_exercises:
+            subtype_html = (
+                f'<a class="underline" href="{exercises_url}/">'
+                f'{escape(subtype)}'
+                f'</a>'
+            )
+        else:
+            subtype_html = escape(subtype)
 
         table_rows.append(
             f"""
@@ -153,7 +173,7 @@ def create_table(rows):
                     </td>
 
                     <td class="px-4 py-3">
-                        {f'<a class="underline" href="{exercises_url}">' if include_exercises else ''}{escape(row["Subtype"])}{'</a>' if include_exercises else ''}
+                        {subtype_html}
                     </td>
 
                     <td class="px-4 py-3 font-medium">
@@ -162,7 +182,7 @@ def create_table(rows):
 
                     <td class="px-4 py-3">
                         <div class="flex flex-wrap gap-2">
-                            {"".join(attachments)}
+                            {"".join(buttons)}
                         </div>
                     </td>
 
@@ -322,7 +342,7 @@ def main():
             "Template does not contain {{TABLE}}"
         )
 
-    # Group all exam rows by section, subject and year.
+    # Group all attachment rows by section, subject and year.
     rows_by_year = get_rows_by_year(
         CSV_FILE
     )

@@ -84,7 +84,7 @@ def create_table(section, subjects):
                 <tr class="border-b last:border-b-0 hover:bg-gray-50">
 
                     <td class="px-4 py-3 font-medium">
-                        <a class="underline" href="{subject}">{escape(subject)}</a>
+                        <a class="underline" href="{subject}/">{escape(subject)}</a>
                     </td>
 
                 </tr>

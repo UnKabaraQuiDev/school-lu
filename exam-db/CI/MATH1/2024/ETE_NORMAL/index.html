@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        <span data-i18n="index.pageTitle">Sections</span>
+        <span>/</span>
+        <span>CI</span>
+        <span>/</span>
+        <span>MATH1</span>
+        <span>/</span>
+        <span>2024</span>
+        <span>/</span>
+        <span>ETE_NORMAL</span>
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/css.js"></script>
+    <script src="/js/i18n.js" data-rel="../../../../"></script>
+    <script src="/js/api.js"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-6 py-5">
+
+            <h1 class="text-2xl font-bold" data-i18n="exercises.title">
+                Exercises
+            </h1>
+
+            <p>
+                <a class="underline" href="../../../..">Sections</a>
+                <span>/</span>
+                <a class="underline" href="../../..">CI</a>
+                <span>/</span>
+                <a class="underline" href="../..">MATH1</a>
+                <span>/</span>
+                <a class="underline" href="..">2024</a>
+                <span>/</span>
+                <a class="underline" href=".">ETE_NORMAL</a>
+            </p>
+
+        </div>
+
+        <select
+            onchange="setLanguage(this.value)"
+            class="border rounded-lg px-3 py-2"
+            aria-label="Language"
+        >
+            <option value="en" data-i18n="languages.english">English</option>
+            <option value="fr" data-i18n="languages.french">Français</option>
+            <option value="de" data-i18n="languages.german">Deutsch</option>
+        </select>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-8">
+
+        <!-- Exam documents -->
+        <section
+            id="exam-links"
+            class="mb-8 rounded-xl bg-white p-5 shadow-sm"
+        >
+            <h2 class="mb-4 text-xl font-bold">
+                <span data-i18n="exams.documents">
+                    Documents
+                </span>
+            </h2>
+
+            <div class="flex flex-wrap gap-3">
+                
+<a
+    href="/data/exams/CI/CI_MATH1/CI_MATH1_2024_ETE_ENONCE.pdf"
+    target="_blank"
+    rel="noopener"
+    data-i18n="mission"
+    class="inline-block px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+>Mission</a>
+
+            </div>
+        </section>
+
+        <!-- Exam documents -->
+        <section
+            id="exam-links"
+            class="mb-8 rounded-xl bg-white p-5 shadow-sm"
+        >
+            <h2 class="mb-4 text-xl font-bold">
+                <span data-i18n="exams.linked-exams">
+                    Exams reusing these documents
+                </span>
+            </h2>
+
+            <div class="flex flex-wrap gap-3">
+                
+            </div>
+        </section>
+
+        <!-- Exercises -->
+        <div
+            id="exercises"
+            class="space-y-12"
+        >
+            <section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        1
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group aspect-square w-[25vh] max-h-[25vh] max-w-[25vh] shrink-0 overflow-hidden rounded-lg border-2 border-blue-200 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CI/CI_MATH1/CI_MATH1_2024_ETE_ENONCE/1.webp"
+        alt="Exercise 1 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="hidden previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="hidden next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        2
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group aspect-square w-[25vh] max-h-[25vh] max-w-[25vh] shrink-0 overflow-hidden rounded-lg border-2 border-blue-200 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CI/CI_MATH1/CI_MATH1_2024_ETE_ENONCE/2.webp"
+        alt="Exercise 2 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="hidden previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="hidden next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        3
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group aspect-square w-[25vh] max-h-[25vh] max-w-[25vh] shrink-0 overflow-hidden rounded-lg border-2 border-blue-200 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CI/CI_MATH1/CI_MATH1_2024_ETE_ENONCE/3.webp"
+        alt="Exercise 3 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="hidden previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="hidden next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        4
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group aspect-square w-[25vh] max-h-[25vh] max-w-[25vh] shrink-0 overflow-hidden rounded-lg border-2 border-blue-200 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CI/CI_MATH1/CI_MATH1_2024_ETE_ENONCE/4.webp"
+        alt="Exercise 4 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="hidden previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="hidden next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section><section class="exercise relative" data-exercise="{{EXERCISE_NUMBER}}">
+    <h2 class="mb-4 text-2xl font-bold">
+        <span data-i18n="exercises.exercise">Exercise</span>
+        5
+    </h2>
+
+    <div class="exercise-images relative">
+        <div class="flex gap-3 overflow-x-auto rounded-xl bg-white p-4 shadow-sm">
+
+            <button
+    type="button"
+    class="exercise-image group aspect-square w-[25vh] max-h-[25vh] max-w-[25vh] shrink-0 overflow-hidden rounded-lg border-2 border-blue-200 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+    <img
+        src="/data/exams/CI/CI_MATH1/CI_MATH1_2024_ETE_ENONCE/5.webp"
+        alt="Exercise 5 mission statement"
+        class="h-full w-full select-none object-contain transition-transform group-hover:scale-[1.02]"
+        draggable="false"
+    >
+</button>
+
+        </div>
+
+        <button
+            type="button"
+            class="hidden previous-image absolute left-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <button
+            type="button"
+            class="hidden next-image absolute right-6 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-2xl text-white shadow hover:bg-black/80"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+    </div>
+</section>
+        </div>
+
+    </main>
+
+
+    <!-- Fullscreen viewer -->
+    <div
+        id="image-viewer"
+        class="fixed inset-0 z-50 hidden bg-black/95 "
+        role="dialog"
+        aria-modal="true"
+    >
+        <!-- Close -->
+        <button
+            id="viewer-close"
+            type="button"
+            class="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20"
+            aria-label="Close"
+            data-i18n="common.close"
+        >
+            &times;
+        </button>
+
+        <!-- Previous exercise -->
+        <button
+            id="viewer-exercise-prev"
+            type="button"
+            class="absolute left-1/2 top-4 z-20 flex h-10 w-16 -translate-x-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20"
+            aria-label="Previous exercise"
+            data-i18n="exercises.previous_exercise"
+        >
+            ↑
+        </button>
+
+        <!-- Next exercise -->
+        <button
+            id="viewer-exercise-next"
+            type="button"
+            class="absolute bottom-4 left-1/2 z-20 flex h-10 w-16 -translate-x-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20"
+            aria-label="Next exercise"
+            data-i18n="exercises.next_exercise"
+        >
+            ↓
+        </button>
+
+        <!-- Previous image -->
+        <button
+            id="viewer-image-prev"
+            type="button"
+            class="absolute left-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-3xl text-white hover:bg-white/20"
+            aria-label="Previous image"
+            data-i18n="exercises.previous_image"
+        >
+            ‹
+        </button>
+
+        <!-- Next image -->
+        <button
+            id="viewer-image-next"
+            type="button"
+            class="absolute right-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-3xl text-white hover:bg-white/20"
+            aria-label="Next image"
+            data-i18n="exercises.next_image"
+        >
+            ›
+        </button>
+
+        <div
+            id="viewer-container"
+            class="absolute inset-0 flex items-center justify-center overflow-hidden select-none touch-none"        >
+            <img
+                id="viewer-image"
+                src=""
+                alt=""
+                class="max-h-none max-w-none select-none object-contain"
+                draggable="false"
+            >
+        </div>
+
+        <div
+            id="viewer-counter"
+            class="absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full bg-white/10 px-4 py-2 text-sm text-white"
+        ></div>
+    </div>
+
+    <script src="/js/exam.js"></script>
+</body>
+</html>

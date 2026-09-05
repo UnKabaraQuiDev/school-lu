@@ -1,29 +1,45 @@
 import csv
-import os
 from pathlib import Path
 from html import escape
 import subprocess
 
+
 ROOT_DIR = Path(
     subprocess.check_output(
-        ["git", "-C", str(Path(__file__).resolve().parent), "rev-parse", "--show-toplevel"],
-        text=True
+        [
+            "git",
+            "-C",
+            str(Path(__file__).resolve().parent),
+            "rev-parse",
+            "--show-toplevel",
+        ],
+        text=True,
     ).strip()
 )
+
 DATA_DIR = ROOT_DIR / "data"
 EXAMS_DB_DIR = ROOT_DIR / "exam-db"
 EXAMS_DB_ALL_DIR = EXAMS_DB_DIR / "all"
 
 TEMPLATE_FILE = EXAMS_DB_ALL_DIR / "index.template.html"
-CSV_FILE = DATA_DIR / "exams/db.csv"
+CSV_FILE = DATA_DIR / "exams" / "db.csv"
 OUTPUT_FILE = EXAMS_DB_ALL_DIR / "index.html"
+
+
+QUALIFIER_BUTTONS = {
+    "STATEMENT": ("Mission", "blue"),
+    "SOLUTION": ("Solution", "green"),
+    "DATA": ("Data", "purple"),
+    "ORAL": ("Oral", "cyan"),
+}
+
 
 def create_button(url, translation_key, color):
     if not url:
         return ""
 
     return f"""
-<a href="/data/{escape(url)}"
+<a href="/data/{escape(url, quote=True)}"
    target="_blank"
    rel="noopener"
    data-i18n="{escape(translation_key.lower())}"
@@ -31,98 +47,202 @@ def create_button(url, translation_key, color):
 </a>
 """
 
+
 def conditional_button(url, text, color):
     if not url:
         return ""
 
     return create_button(url, text, color)
 
+
+def group_rows_by_exam(rows):
+    """
+    Group db.csv rows belonging to the same exam.
+
+    db.csv now contains one row per attachment:
+
+        Section,Subject,Year,Season,Subtype,Name,Qualifier,Attachement,Source
+
+    The exam identity is:
+
+        Section + Subject + Year + Season + Subtype
+
+    Each attachment is stored using its Qualifier.
+    """
+
+    exams = {}
+
+    for row in rows:
+        section = row.get("Section", "").strip()
+        subject = row.get("Subject", "").strip()
+        year = row.get("Year", "").strip()
+        season = row.get("Season", "").strip()
+        subtype = row.get("Subtype", "").strip()
+
+        if not section or not subject or not year:
+            continue
+
+        key = (
+            section,
+            subject,
+            year,
+            season,
+            subtype,
+        )
+
+        if key not in exams:
+            exams[key] = {
+                "Section": section,
+                "Subject": subject,
+                "Year": year,
+                "Season": season,
+                "Subtype": subtype,
+                "Name": row.get("Name", "").strip(),
+                "attachments": {},
+            }
+
+        qualifier = row.get("Qualifier", "").strip().upper()
+        attachment = row.get("Attachement", "").strip()
+
+        if qualifier and attachment:
+            exams[key]["attachments"][qualifier] = attachment
+
+    return exams
+
+
 def create_table(csv_file):
     """Load CSV data and turn it into an HTML table."""
 
-    rows = []
+    csv_rows = []
 
-    with csv_file.open("r", encoding="utf-8", newline="") as file:
+    with csv_file.open(
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
         reader = csv.DictReader(file)
 
         for row in reader:
-            exercises_url = (
-                f'{escape(row["Section"], quote=True)}/'
-                f'{escape(row["Subject"], quote=True)}/'
-                f'{escape(row["Year"], quote=True)}/'
-                f'{escape(row["Season"], quote=True)}_'
-                f'{escape(row["Subtype"], quote=True)}'
-            )
+            csv_rows.append(row)
 
-            exercises_path = (
-                EXAMS_DB_DIR
-                / exercises_url
-                / "index.html"
-            )
+    exams = group_rows_by_exam(csv_rows)
 
-            include_exercises = exercises_path.exists()
-            
-            rows.append(f"""
+    rows = []
+
+    for exam in sorted(
+        exams.values(),
+        key=lambda item: (
+            item["Section"],
+            item["Subject"],
+            item["Year"],
+            item["Season"],
+            item["Subtype"],
+            item["Name"],
+        ),
+    ):
+        section = exam["Section"]
+        subject = exam["Subject"]
+        year = exam["Year"]
+        season = exam["Season"]
+        subtype = exam["Subtype"]
+        name = exam["Name"]
+        attachments = exam["attachments"]
+
+        exercises_url = (
+            f'{escape(section, quote=True)}/'
+            f'{escape(subject, quote=True)}/'
+            f'{escape(year, quote=True)}/'
+            f'{escape(season, quote=True)}_'
+            f'{escape(subtype, quote=True)}'
+        )
+
+        exercises_path = (
+            EXAMS_DB_DIR
+            / section
+            / subject
+            / year
+            / f"{season}_{subtype}"
+            / "index.html"
+        )
+
+        include_exercises = exercises_path.exists()
+
+        if include_exercises:
+            subtype_html = (
+                f'<a class="underline" '
+                f'href="../{exercises_url}/">'
+                f'{escape(subtype)}'
+                f'</a>'
+            )
+        else:
+            subtype_html = escape(subtype)
+
+        buttons = []
+
+        for qualifier, (translation_key, color) in QUALIFIER_BUTTONS.items():
+            attachment = attachments.get(qualifier, "")
+
+            if attachment:
+                buttons.append(
+                    conditional_button(
+                        attachment,
+                        translation_key,
+                        color,
+                    )
+                )
+
+        rows.append(
+            f"""
                 <tr class="border-b hover:bg-gray-50">
 
                     <td class="px-4 py-3">
-                        <a class="underline" href="../{row["Section"]}">{escape(row["Section"])}</a>
+                        <a
+                            class="underline"
+                            href="../{escape(section, quote=True)}/"
+                        >
+                            {escape(section)}
+                        </a>
                     </td>
 
                     <td class="px-4 py-3">
-                        <a class="underline" href="../{row["Section"]}/{row["Subject"]}">{escape(row["Subject"])}</a>
+                        <a
+                            class="underline"
+                            href="../{escape(section, quote=True)}/{escape(subject, quote=True)}/"
+                        >
+                            {escape(subject)}
+                        </a>
                     </td>
 
                     <td class="px-4 py-3">
-                        <a class="underline" href="../{row["Section"]}/{row["Subject"]}/{row["Year"]}">{escape(row["Year"])}</a>
+                        <a
+                            class="underline"
+                            href="../{escape(section, quote=True)}/{escape(subject, quote=True)}/{escape(year, quote=True)}/"
+                        >
+                            {escape(year)}
+                        </a>
                     </td>
 
                     <td class="px-4 py-3">
-                        {escape(row["Season"])}
+                        {escape(season)}
                     </td>
 
                     <td class="px-4 py-3">
-                        {f'<a class="underline" href="../{exercises_url}">' if include_exercises else ''}{escape(row["Subtype"])}{'</a>' if include_exercises else ''}
+                        {subtype_html}
                     </td>
 
                     <td class="px-4 py-3 font-medium">
-                        {escape(row["Name"])}
+                        {escape(name)}
                     </td>
 
-                    
                     <td class="px-4 py-3">
                         <div class="flex flex-wrap gap-2">
-
-                            {conditional_button(
-                                row["Mission statement"],
-                                "Mission",
-                                "blue"
-                            )}
-
-                            {conditional_button(
-                                row["Solution"],
-                                "Solution",
-                                "green"
-                            )}
-
-                            {conditional_button(
-                                row["Data"],
-                                "Data",
-                                "purple"
-                            )}
-
-                            {conditional_button(
-                                row["Oral"],
-                                "Oral",
-                                "cyan"
-                            )}
-
+                            {"".join(buttons)}
                         </div>
                     </td>
 
-
                 </tr>
-            """)
+            """
+        )
 
     return f"""
 <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
@@ -158,7 +278,7 @@ def create_table(csv_file):
 
 
 def main():
-    # Check that the required files exist
+    # Check that the required files exist.
     if not TEMPLATE_FILE.exists():
         raise FileNotFoundError(
             f"Template not found: {TEMPLATE_FILE}"
@@ -169,22 +289,36 @@ def main():
             f"CSV file not found: {CSV_FILE}"
         )
 
-    # Load template
-    template = TEMPLATE_FILE.read_text(encoding="utf-8")
+    # Load template.
+    template = TEMPLATE_FILE.read_text(
+        encoding="utf-8"
+    )
 
-    # Generate table
+    # Generate table.
     table = create_table(CSV_FILE)
 
-    # Insert table into template
+    # Insert table into template.
     if "{{TABLE}}" not in template:
         raise ValueError(
             "Template does not contain {{TABLE}}"
         )
 
-    html = template.replace("{{TABLE}}", table)
+    html = template.replace(
+        "{{TABLE}}",
+        table,
+    )
 
-    # Write final HTML
-    OUTPUT_FILE.write_text(html, encoding="utf-8")
+    # Make sure the output directory exists.
+    EXAMS_DB_ALL_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    # Write final HTML.
+    OUTPUT_FILE.write_text(
+        html,
+        encoding="utf-8",
+    )
 
     print(f"Generated: {OUTPUT_FILE}")
 
