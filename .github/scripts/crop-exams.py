@@ -5987,6 +5987,62 @@ def export_box(
         horizontal_cuts
         or vertical_cuts
     ):
+        painter = QPainter(
+            output
+        )
+
+        painter.setRenderHint(
+            QPainter.RenderHint.Antialiasing
+        )
+
+        pen = QPen(
+            Qt.GlobalColor.magenta
+        )
+
+        pen.setStyle(
+            Qt.PenStyle.DashLine
+        )
+
+        pen.setWidthF(
+            2.0
+        )
+
+        painter.setPen(
+            pen
+        )
+
+        # Horizontal cuts.
+        for start, end in horizontal_cuts:
+            y = start
+
+            painter.drawLine(
+                QPointF(
+                    0,
+                    y,
+                ),
+                QPointF(
+                    output.width(),
+                    y,
+                ),
+            )
+
+        # Vertical cuts.
+        for start, end in vertical_cuts:
+            x = start
+
+            painter.drawLine(
+                QPointF(
+                    x,
+                    0,
+                ),
+                QPointF(
+                    x,
+                    output.height(),
+                ),
+            )
+
+        painter.end()
+
         output = crop_removed_strips(
             output,
             horizontal_cuts,
