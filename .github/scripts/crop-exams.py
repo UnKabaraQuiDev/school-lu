@@ -256,6 +256,9 @@ def find_pdfs() -> list[Path]:
 
         if is_hidden_path(path):
             continue
+        
+        if path.parent.is_symlink():
+            continue
 
         result.append(path)
 
