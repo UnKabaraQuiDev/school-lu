@@ -106,14 +106,14 @@ def replace_file_with_symlink(target: Path, duplicate: Path) -> None:
 
 def replace_dir_with_symlink(target: Path, duplicate: Path) -> None:
     """
-    Replace a directory with a relative symlink.
+    Replace an existing directory, symlink, or other filesystem entry
+    with a relative symlink to the target directory.
 
-    The existing directory is removed recursively, including all
-    files and subdirectories inside it.
+    If the directory does not exist, it is simply created as a symlink.
     """
     if duplicate.is_symlink():
         duplicate.unlink()
-    else:
+    elif duplicate.exists():
         shutil.rmtree(duplicate)
 
     duplicate.symlink_to(
@@ -129,6 +129,7 @@ def main() -> int:
             "Associated directories are handled as well."
         )
     )
+
     parser.add_argument(
         "--apply",
         action="store_true",
@@ -137,6 +138,7 @@ def main() -> int:
             "Without this option, the script only performs a dry run."
         ),
     )
+
     args = parser.parse_args()
 
     if not EXAMS_DIR.is_dir():
@@ -170,6 +172,8 @@ def main() -> int:
 
     duplicates = find_duplicates(pdfs)
 
+    # This is useful when there are fewer than 10 PDFs, or when the
+    # progress output did not reach exactly 100%.
     print("[INFO] 100% scanned")
 
     if not duplicates:
@@ -192,6 +196,8 @@ def main() -> int:
 
         target = paths[0]
         target_dir = associated_dir(target)
+
+        # The target directory is the source of truth.
         target_has_dir = target_dir.is_dir()
 
         duplicates_to_replace = paths[1:]
@@ -210,8 +216,8 @@ def main() -> int:
 
             print(f" * {duplicate.relative_to(EXAMS_DIR)}")
 
-            if duplicate_dir.is_dir():
-                if target_has_dir:
+            if target_has_dir:
+                if duplicate_dir.exists() or duplicate_dir.is_symlink():
                     print(
                         f"   + directory: "
                         f"{duplicate_dir.relative_to(EXAMS_DIR)} "
@@ -219,9 +225,9 @@ def main() -> int:
                     )
                 else:
                     print(
-                        f"   ! directory left unchanged: "
+                        f"   + directory will be created: "
                         f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                        f"(target has no associated directory)"
+                        f"-> {target_dir.relative_to(EXAMS_DIR)}"
                     )
 
         for duplicate in duplicates_to_replace:
@@ -254,22 +260,32 @@ def main() -> int:
                         file=sys.stderr,
                     )
 
-                    # Do not touch the associated directory if the PDF
-                    # replacement failed.
+                    # Do not touch the associated directory if replacing
+                    # the PDF failed.
                     continue
 
             # ------------------------------------------------------------
-            # Replace the associated directory
+            # Replace/create the associated directory
             # ------------------------------------------------------------
 
-            if duplicate_dir.is_dir() and target_has_dir:
+            if target_has_dir:
                 if not args.apply:
-                    print(
-                        f"[DRY-RUN] Would remove directory "
-                        f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                        f"and replace it with symlink to "
-                        f"{target_dir.relative_to(EXAMS_DIR)}"
-                    )
+                    if (
+                        duplicate_dir.exists()
+                        or duplicate_dir.is_symlink()
+                    ):
+                        print(
+                            f"[DRY-RUN] Would remove "
+                            f"{duplicate_dir.relative_to(EXAMS_DIR)} "
+                            f"and replace it with symlink to "
+                            f"{target_dir.relative_to(EXAMS_DIR)}"
+                        )
+                    else:
+                        print(
+                            f"[DRY-RUN] Would create symlink "
+                            f"{duplicate_dir.relative_to(EXAMS_DIR)} "
+                            f"-> {target_dir.relative_to(EXAMS_DIR)}"
+                        )
                 else:
                     try:
                         replace_dir_with_symlink(
@@ -278,10 +294,9 @@ def main() -> int:
                         )
 
                         print(
-                            f"[INFO] Replaced directory "
+                            f"[INFO] Replaced/created directory symlink "
                             f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                            f"with symlink to "
-                            f"{target_dir.relative_to(EXAMS_DIR)}"
+                            f"-> {target_dir.relative_to(EXAMS_DIR)}"
                         )
                     except OSError as error:
                         print(
@@ -294,7 +309,10 @@ def main() -> int:
     print("[INFO] Done")
 
     if not args.apply:
-        print("[INFO] Nothing was changed. Use --apply to make the changes.")
+        print(
+            "[INFO] Nothing was changed. "
+            "Use --apply to make the changes."
+        )
 
     return 0
 
