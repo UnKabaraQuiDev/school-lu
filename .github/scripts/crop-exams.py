@@ -281,10 +281,11 @@ def find_headless_jobs() -> list[tuple[Path, Path]]:
         if is_hidden_path(index_path):
             continue
         
+        output_dir = index_path.parent
+        
         if output_dir.is_symlink():
             continue
 
-        output_dir = index_path.parent
         pdf_path = output_dir.with_suffix(".pdf")
 
         if not pdf_path.is_file():
