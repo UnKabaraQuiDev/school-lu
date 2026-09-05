@@ -42,7 +42,7 @@ def file_hash(path: Path) -> str:
 
 
 def find_pdfs(directory: Path) -> list[Path]:
-    """Recursively find all PDF files."""
+    """Recursively find all PDF files, including symlinked PDFs."""
     return sorted(
         (
             path
@@ -93,6 +93,18 @@ def associated_dir(pdf: Path) -> Path:
     return pdf.with_suffix("")
 
 
+def resolved_pdf(pdf: Path) -> Path:
+    """
+    Return the real PDF a symlink points to.
+
+    For a normal PDF, this returns the PDF itself.
+    """
+    if pdf.is_symlink():
+        return pdf.resolve()
+
+    return pdf
+
+
 def relative_target(target: Path, link: Path) -> Path:
     """Return target as a relative path from the link's parent directory."""
     return Path(os.path.relpath(target, start=link.parent))
@@ -114,7 +126,10 @@ def replace_dir_with_symlink(target: Path, duplicate: Path) -> None:
     if duplicate.is_symlink():
         duplicate.unlink()
     elif duplicate.exists():
-        shutil.rmtree(duplicate)
+        if duplicate.is_dir():
+            shutil.rmtree(duplicate)
+        else:
+            duplicate.unlink()
 
     duplicate.symlink_to(
         relative_target(target, duplicate),
@@ -122,11 +137,182 @@ def replace_dir_with_symlink(target: Path, duplicate: Path) -> None:
     )
 
 
+def create_associated_dir(directory: Path) -> None:
+    """Create a real associated directory if it does not exist."""
+    directory.mkdir(parents=True, exist_ok=True)
+
+
+def ensure_pdf_associated_dir(
+    pdf: Path,
+    apply: bool,
+) -> None:
+    """
+    Ensure that every PDF has an associated directory.
+
+    For a normal PDF:
+        PDF + missing directory -> create real directory.
+
+    For a symlinked PDF:
+        PDF symlink + missing directory -> create a symlink to the
+        directory associated with the PDF's real target.
+
+    If the symlinked PDF's target directory does not exist, create
+    that target directory first.
+    """
+    directory = associated_dir(pdf)
+
+    # ------------------------------------------------------------
+    # Normal/original PDF
+    # ------------------------------------------------------------
+
+    if not pdf.is_symlink():
+        if directory.is_dir():
+            return
+
+        if directory.is_symlink() or directory.exists():
+            if not apply:
+                print(
+                    f"[DRY-RUN] Would replace invalid associated entry "
+                    f"{directory.relative_to(EXAMS_DIR)} "
+                    f"with a real directory"
+                )
+                return
+
+            try:
+                if directory.is_symlink():
+                    directory.unlink()
+                elif directory.is_dir():
+                    shutil.rmtree(directory)
+                else:
+                    directory.unlink()
+
+                create_associated_dir(directory)
+
+                print(
+                    f"[INFO] Created associated directory "
+                    f"{directory.relative_to(EXAMS_DIR)}"
+                )
+            except OSError as error:
+                print(
+                    f"[WARNING] Could not create associated directory "
+                    f"{directory}: {error}",
+                    file=sys.stderr,
+                )
+
+            return
+
+        if not apply:
+            print(
+                f"[DRY-RUN] Would create associated directory "
+                f"{directory.relative_to(EXAMS_DIR)}"
+            )
+        else:
+            try:
+                create_associated_dir(directory)
+
+                print(
+                    f"[INFO] Created associated directory "
+                    f"{directory.relative_to(EXAMS_DIR)}"
+                )
+            except OSError as error:
+                print(
+                    f"[WARNING] Could not create associated directory "
+                    f"{directory}: {error}",
+                    file=sys.stderr,
+                )
+
+        return
+
+    # ------------------------------------------------------------
+    # Symlinked PDF
+    # ------------------------------------------------------------
+
+    try:
+        target_pdf = resolved_pdf(pdf)
+    except OSError as error:
+        print(
+            f"[WARNING] Could not resolve PDF symlink {pdf}: {error}",
+            file=sys.stderr,
+        )
+        return
+
+    target_dir = associated_dir(target_pdf)
+
+    # The target PDF must also have an associated directory.
+    if not target_dir.is_dir():
+        if not apply:
+            print(
+                f"[DRY-RUN] Would create target associated directory "
+                f"{target_dir.relative_to(EXAMS_DIR)}"
+            )
+        else:
+            try:
+                if target_dir.is_symlink():
+                    target_dir.unlink()
+                elif target_dir.exists():
+                    if target_dir.is_dir():
+                        shutil.rmtree(target_dir)
+                    else:
+                        target_dir.unlink()
+
+                create_associated_dir(target_dir)
+
+                print(
+                    f"[INFO] Created target associated directory "
+                    f"{target_dir.relative_to(EXAMS_DIR)}"
+                )
+            except OSError as error:
+                print(
+                    f"[WARNING] Could not create target associated "
+                    f"directory {target_dir}: {error}",
+                    file=sys.stderr,
+                )
+                return
+
+    # The PDF's associated directory should point to the target's directory.
+    if (
+        directory.is_symlink()
+        and directory.resolve() == target_dir.resolve()
+    ):
+        return
+
+    if not apply:
+        if directory.exists() or directory.is_symlink():
+            print(
+                f"[DRY-RUN] Would replace associated directory "
+                f"{directory.relative_to(EXAMS_DIR)} "
+                f"with symlink to "
+                f"{target_dir.relative_to(EXAMS_DIR)}"
+            )
+        else:
+            print(
+                f"[DRY-RUN] Would create associated directory symlink "
+                f"{directory.relative_to(EXAMS_DIR)} "
+                f"-> {target_dir.relative_to(EXAMS_DIR)}"
+            )
+        return
+
+    try:
+        replace_dir_with_symlink(target_dir, directory)
+
+        print(
+            f"[INFO] Created/updated associated directory symlink "
+            f"{directory.relative_to(EXAMS_DIR)} "
+            f"-> {target_dir.relative_to(EXAMS_DIR)}"
+        )
+    except OSError as error:
+        print(
+            f"[WARNING] Could not create associated directory symlink "
+            f"{directory}: {error}",
+            file=sys.stderr,
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Find duplicate PDFs and replace them with symlinks. "
-            "Associated directories are handled as well."
+            "Ensure every PDF has an associated directory."
         )
     )
 
@@ -134,8 +320,8 @@ def main() -> int:
         "--apply",
         action="store_true",
         help=(
-            "Actually replace duplicate PDFs and directories with symlinks. "
-            "Without this option, the script only performs a dry run."
+            "Actually make changes. Without this option, "
+            "the script only performs a dry run."
         ),
     )
 
@@ -172,103 +358,170 @@ def main() -> int:
 
     duplicates = find_duplicates(pdfs)
 
-    # This is useful when there are fewer than 10 PDFs, or when the
-    # progress output did not reach exactly 100%.
     print("[INFO] 100% scanned")
 
-    if not duplicates:
-        print("[INFO] No duplicates found")
-        return 0
+    # ------------------------------------------------------------
+    # First handle duplicate PDFs
+    # ------------------------------------------------------------
 
-    duplicate_count = sum(len(paths) - 1 for paths in duplicates.values())
-
-    print(
-        f"[INFO] Found {len(duplicates)} duplicate group(s), "
-        f"{duplicate_count} duplicate PDF(s)"
-    )
-
-    for paths in duplicates.values():
-        # Keep the alphabetically lowest relative path.
-        paths = sorted(
-            paths,
-            key=lambda path: path.relative_to(EXAMS_DIR).as_posix().lower(),
+    if duplicates:
+        duplicate_count = sum(
+            len(paths) - 1
+            for paths in duplicates.values()
         )
 
-        target = paths[0]
-        target_dir = associated_dir(target)
+        print(
+            f"[INFO] Found {len(duplicates)} duplicate group(s), "
+            f"{duplicate_count} duplicate PDF(s)"
+        )
 
-        # The target directory is the source of truth.
-        target_has_dir = target_dir.is_dir()
+        for paths in duplicates.values():
+            # Prefer real PDFs over symlinked PDFs.
+            # Within each category, keep the alphabetically lowest path.
+            paths = sorted(
+                paths,
+                key=lambda path: (
+                    path.is_symlink(),
+                    path.relative_to(EXAMS_DIR).as_posix().lower(),
+                ),
+            )
 
-        duplicates_to_replace = paths[1:]
+            target = paths[0]
+            target_dir = associated_dir(target)
 
-        print()
-        print(f"[DUPLICATE] => {target.relative_to(EXAMS_DIR)}")
+            # --------------------------------------------------------
+            # The target must always have a real associated directory.
+            # --------------------------------------------------------
 
-        if target_has_dir:
+            if target.is_symlink():
+                # This should normally not happen because real PDFs are
+                # preferred, but handle it safely.
+                try:
+                    target_pdf = resolved_pdf(target)
+                    target_dir = associated_dir(target_pdf)
+                except OSError as error:
+                    print(
+                        f"[WARNING] Could not resolve target {target}: "
+                        f"{error}",
+                        file=sys.stderr,
+                    )
+                    continue
+
+            target_has_dir = target_dir.is_dir()
+
+            if not target_has_dir:
+                if not args.apply:
+                    print(
+                        f"[DRY-RUN] Would create target associated "
+                        f"directory "
+                        f"{target_dir.relative_to(EXAMS_DIR)}"
+                    )
+                else:
+                    try:
+                        if target_dir.is_symlink():
+                            target_dir.unlink()
+                        elif target_dir.exists():
+                            if target_dir.is_dir():
+                                shutil.rmtree(target_dir)
+                            else:
+                                target_dir.unlink()
+
+                        create_associated_dir(target_dir)
+
+                        print(
+                            f"[INFO] Created target associated directory "
+                            f"{target_dir.relative_to(EXAMS_DIR)}"
+                        )
+
+                        target_has_dir = True
+                    except OSError as error:
+                        print(
+                            f"[WARNING] Could not create target associated "
+                            f"directory {target_dir}: {error}",
+                            file=sys.stderr,
+                        )
+                        continue
+
+            duplicates_to_replace = paths[1:]
+
+            print()
+            print(
+                f"[DUPLICATE] => "
+                f"{target.relative_to(EXAMS_DIR)}"
+            )
+
             print(
                 f"  + associated directory: "
                 f"{target_dir.relative_to(EXAMS_DIR)}"
             )
 
-        for duplicate in duplicates_to_replace:
-            duplicate_dir = associated_dir(duplicate)
+            for duplicate in duplicates_to_replace:
+                duplicate_dir = associated_dir(duplicate)
 
-            print(f" * {duplicate.relative_to(EXAMS_DIR)}")
+                print(
+                    f" * {duplicate.relative_to(EXAMS_DIR)}"
+                )
 
-            if target_has_dir:
-                if duplicate_dir.exists() or duplicate_dir.is_symlink():
+                if (
+                    duplicate_dir.exists()
+                    or duplicate_dir.is_symlink()
+                ):
                     print(
                         f"   + directory: "
                         f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                        f"-> {target_dir.relative_to(EXAMS_DIR)}"
+                        f"-> "
+                        f"{target_dir.relative_to(EXAMS_DIR)}"
                     )
                 else:
                     print(
                         f"   + directory will be created: "
                         f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                        f"-> {target_dir.relative_to(EXAMS_DIR)}"
+                        f"-> "
+                        f"{target_dir.relative_to(EXAMS_DIR)}"
                     )
 
-        for duplicate in duplicates_to_replace:
-            duplicate_dir = associated_dir(duplicate)
+            for duplicate in duplicates_to_replace:
+                duplicate_dir = associated_dir(duplicate)
 
-            # ------------------------------------------------------------
-            # Replace the PDF
-            # ------------------------------------------------------------
+                # ----------------------------------------------------
+                # Replace the PDF
+                # ----------------------------------------------------
 
-            if not args.apply:
-                print(
-                    f"[DRY-RUN] Would replace "
-                    f"{duplicate.relative_to(EXAMS_DIR)} "
-                    f"with symlink to "
-                    f"{target.relative_to(EXAMS_DIR)}"
-                )
-            else:
-                try:
-                    replace_file_with_symlink(target, duplicate)
-
+                if not args.apply:
                     print(
-                        f"[INFO] Replaced "
+                        f"[DRY-RUN] Would replace "
                         f"{duplicate.relative_to(EXAMS_DIR)} "
                         f"with symlink to "
                         f"{target.relative_to(EXAMS_DIR)}"
                     )
-                except OSError as error:
-                    print(
-                        f"[WARNING] Could not replace {duplicate}: {error}",
-                        file=sys.stderr,
-                    )
+                else:
+                    try:
+                        replace_file_with_symlink(
+                            target,
+                            duplicate,
+                        )
 
-                    # Do not touch the associated directory if replacing
-                    # the PDF failed.
-                    continue
+                        print(
+                            f"[INFO] Replaced "
+                            f"{duplicate.relative_to(EXAMS_DIR)} "
+                            f"with symlink to "
+                            f"{target.relative_to(EXAMS_DIR)}"
+                        )
+                    except OSError as error:
+                        print(
+                            f"[WARNING] Could not replace "
+                            f"{duplicate}: {error}",
+                            file=sys.stderr,
+                        )
 
-            # ------------------------------------------------------------
-            # Replace/create the associated directory
-            # ------------------------------------------------------------
+                        # Do not touch the associated directory if
+                        # replacing the PDF failed.
+                        continue
 
-            if target_has_dir:
+                # ----------------------------------------------------
+                # Replace/create the duplicate's directory symlink
+                # ----------------------------------------------------
+
                 if not args.apply:
                     if (
                         duplicate_dir.exists()
@@ -284,7 +537,8 @@ def main() -> int:
                         print(
                             f"[DRY-RUN] Would create symlink "
                             f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                            f"-> {target_dir.relative_to(EXAMS_DIR)}"
+                            f"-> "
+                            f"{target_dir.relative_to(EXAMS_DIR)}"
                         )
                 else:
                     try:
@@ -296,7 +550,8 @@ def main() -> int:
                         print(
                             f"[INFO] Replaced/created directory symlink "
                             f"{duplicate_dir.relative_to(EXAMS_DIR)} "
-                            f"-> {target_dir.relative_to(EXAMS_DIR)}"
+                            f"-> "
+                            f"{target_dir.relative_to(EXAMS_DIR)}"
                         )
                     except OSError as error:
                         print(
@@ -304,6 +559,34 @@ def main() -> int:
                             f"{duplicate_dir}: {error}",
                             file=sys.stderr,
                         )
+
+    else:
+        print("[INFO] No duplicates found")
+
+    # ------------------------------------------------------------
+    # Finally, ensure EVERY PDF has an associated directory.
+    #
+    # This also handles:
+    #   - unique PDFs
+    #   - existing symlinked PDFs
+    #   - PDFs whose associated directory was missing
+    # ------------------------------------------------------------
+
+    print()
+    print("[INFO] Checking associated directories...")
+
+    for pdf in pdfs:
+        try:
+            ensure_pdf_associated_dir(
+                pdf,
+                args.apply,
+            )
+        except OSError as error:
+            print(
+                f"[WARNING] Could not process associated directory "
+                f"for {pdf}: {error}",
+                file=sys.stderr,
+            )
 
     print()
     print("[INFO] Done")

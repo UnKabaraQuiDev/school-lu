@@ -4487,7 +4487,7 @@ class MainWindow(QMainWindow):
                     QColor("#f39c12")
                 )
 
-            elif output_dir.exists():
+            elif (output_dir / "index.csv").exists():
                 item.setForeground(
                     QColor("#2ecc71")
                 )
@@ -4678,7 +4678,7 @@ class MainWindow(QMainWindow):
                     QColor("#f39c12")
                 )
 
-            elif output_dir.exists():
+            elif (output_dir / "index.csv").is_file():
                 item.setForeground(
                     QColor("#2ecc71")
                 )
