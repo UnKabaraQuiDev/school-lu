@@ -102,8 +102,17 @@ public class SyncExamsController {
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
 
-				final Set<String> requiredHeaders = Set
-						.of("Section", "Subject", "Year", "Season", "Subtype", "Name", "Mission statement", "Solution", "Data", "Oral");
+				final Set<String> requiredHeaders = Set.of("Section",
+						"Subject",
+						"Year",
+						"Season",
+						"Subtype",
+						"Name",
+						"Mission statement",
+						"Solution",
+						"Data",
+						"Oral",
+						"Source");
 
 				final Set<String> headers = new HashSet<>(parser.getHeaderNames());
 
