@@ -22,7 +22,8 @@ jobs:
 
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_run'
+      github.event_name == 'workflow_run' ||
+      github.event_name == 'schedule'
 
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
