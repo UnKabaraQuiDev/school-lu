@@ -342,6 +342,7 @@ public class SyncExercisesController {
 						final List<TagData> missingTags = neededTags.stream()
 								.filter(tagName -> !existingTagNames.contains(tagName))
 								.map(TagData::new)
+								.filter(c -> !c.getName().isEmpty())
 								.toList();
 
 						final List<TagData> reloadedMissingTags = missingTags.isEmpty() ? List.of()

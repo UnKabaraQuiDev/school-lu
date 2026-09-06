@@ -44,7 +44,7 @@ public class SecurityConfig {
 				.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 				.authenticationProvider(authenticationProvider)
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/login", "/register", "/logout", "/error", "/csrf")
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/login", "/register", "/logout", "/error", "/csrf", "/p/**")
 						.permitAll()
 						.anyRequest()
 						.authenticated())
