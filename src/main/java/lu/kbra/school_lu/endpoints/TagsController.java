@@ -36,7 +36,7 @@ public class TagsController {
 
 	@GetMapping("/list")
 	public List<TagData> list() {
-		return this.tagTable.loadAll();
+		return this.tagTable.all();
 	}
 
 	@GetMapping("/{id}")
