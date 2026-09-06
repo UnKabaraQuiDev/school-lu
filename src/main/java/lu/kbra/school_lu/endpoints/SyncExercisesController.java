@@ -30,6 +30,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
+import lu.kbra.pclib.db.exception.TooManyMatchingRowsException;
+import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.UserId;
@@ -140,7 +142,8 @@ public class SyncExercisesController {
 						"Additive box",
 						"Subtractive boxes",
 						"Attachment",
-						"ExamSource");
+						"SourceExam",
+						"Tags");
 
 				final Set<String> headers = new HashSet<>(parser.getHeaderNames());
 
@@ -202,13 +205,20 @@ public class SyncExercisesController {
 					case "AJOU" -> ExamType.AJOU;
 					default -> null;
 					};
-					final String source = PCUtils.nullIfBlank(record.get("Source"));
+					final String source = PCUtils.nullIfBlank(record.get("Source")); // Attachement
 					final int exerciseIndex = Integer.parseInt(record.get("Exercise Index"));
-					final String qualifier = PCUtils.nullIfBlank(record.get("Qualifier"));
+					final ExamAttachmentType qualifier = switch (record.get("Qualifier").trim().toUpperCase()) {
+					case "SOLUTION" -> ExamAttachmentType.SOLUTION;
+					case "STATEMENT" -> ExamAttachmentType.STATEMENT;
+					case "ORAL" -> ExamAttachmentType.ORAL;
+					case "DATA" -> ExamAttachmentType.DATA;
+					default -> null;
+					};
 					final int alternativeIndex = Integer.parseInt(record.get("Alternative Index"));
 					final String additiveBox = PCUtils.nullIfBlank(record.get("Additive box"));
 					final String subtractiveBoxes = PCUtils.nullIfBlank(record.get("Subtractive boxes"));
 					final String attachment = record.get("Attachment");
+					final String sourceExam = PCUtils.nullIfBlank(record.get("SourceExam"));
 					final String[] tags = record.get("Tags").split("\\s+");
 
 					if (source == null) {
@@ -221,6 +231,10 @@ public class SyncExercisesController {
 						emitter.send(SseEmitter.event()
 								.name("warning")
 								.data("Exercise with no additive box: " + Arrays.toString(record.values())));
+						continue;
+					}
+					if (qualifier == null) {
+						emitter.send(SseEmitter.event().name("warning").data("Unknown qualifier: " + Arrays.toString(record.values())));
 						continue;
 					}
 
@@ -293,9 +307,7 @@ public class SyncExercisesController {
 							additiveRectangle,
 							subtractiveRectangles);
 
-					if (!this.exerciseAttachmentTable.existsUnique(exerciseAttachment)) {
-						this.exerciseAttachmentTable.insertAndReload(exerciseAttachment);
-					}
+					this.exerciseAttachmentTable.loadUniqueIfExistsElseInsert(exerciseAttachment);
 
 					{
 						final List<ExerciseTagData> existingExTags = this.exerciseTagTable.byExercise(exerciseData);
@@ -354,6 +366,66 @@ public class SyncExercisesController {
 						if (!addingExTags.isEmpty()) {
 							this.exerciseTagTable.insertAndReloadAll(addingExTags);
 						}
+					}
+
+					if (sourceExam != null) {
+						final String[] sourceTokens = sourceExam.split(":");
+						final String sourceSection = sourceTokens[0];
+						final String sourceSubject = sourceTokens[1];
+						final int sourceYear = Integer.parseInt(sourceTokens[2]);
+						final ExamSeason sourceSeason = switch (sourceTokens[3]) {
+						case "ETE", "SUMMER" -> ExamSeason.SUMMER;
+						case "SEPT" -> ExamSeason.SEPTEMBER;
+						default -> null;
+						};
+						final ExamType sourceSubtype = switch (sourceTokens[4]) {
+						case "NORMAL" -> ExamType.NORMAL;
+						case "REP" -> ExamType.REP;
+						case "AJOU" -> ExamType.AJOU;
+						default -> null;
+						};
+						final String sourceName = PCUtils.nullIfBlank(sourceTokens[5]);
+						final ExamAttachmentType sourceQualifier = switch (sourceTokens[6]) {
+						case "SOLUTION" -> ExamAttachmentType.SOLUTION;
+						case "STATEMENT" -> ExamAttachmentType.STATEMENT;
+						case "ORAL" -> ExamAttachmentType.ORAL;
+						case "DATA" -> ExamAttachmentType.DATA;
+						default -> null;
+						};
+
+						final ExamData parentData = new ExamData(subjectDatas.get(sourceSection).get(sourceSubject).getId(),
+								sourceYear,
+								sourceSeason,
+								sourceSubtype);
+						try {
+							examTable.loadUnique(parentData);
+						} catch (NoMatchingRowException e) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam not found: " + source));
+							continue;
+						}
+
+						final ExamAttachmentData parentAttachmentData = new ExamAttachmentData(parentData.getId(),
+								sourceQualifier,
+								sourceName);
+						try {
+							examAttachmentTable.loadUnique(parentAttachmentData);
+						} catch (final TooManyMatchingRowsException e) {
+							emitter.send(SseEmitter.event()
+									.name("warning")
+									.data("Exam attachment duplicate: " + source + " matching:\n"
+											+ examAttachmentTable
+													.loadByUnique(new ExamAttachmentData(parentData.getId(), sourceQualifier, sourceName))
+													.stream()
+													.map(c -> " * " + c.toString())
+													.collect(Collectors.joining("\n"))));
+							continue;
+						} catch (NoMatchingRowException e) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
+							continue;
+						}
+
+						examAttachment.setParentId(parentAttachmentData.getId());
+						examAttachmentTable.update(examAttachment);
 					}
 
 					emitter.send(SseEmitter.event().name("progress").data(index + "/" + rowCount));

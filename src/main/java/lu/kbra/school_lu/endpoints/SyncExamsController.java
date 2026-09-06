@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -24,6 +24,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
+import lu.kbra.pclib.db.exception.TooManyMatchingRowsException;
+import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.UserId;
@@ -102,17 +104,8 @@ public class SyncExamsController {
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
 
-				final Set<String> requiredHeaders = Set.of("Section",
-						"Subject",
-						"Year",
-						"Season",
-						"Subtype",
-						"Name",
-						"Mission statement",
-						"Solution",
-						"Data",
-						"Oral",
-						"Source");
+				final Set<String> requiredHeaders = Set
+						.of("Section", "Subject", "Year", "Season", "Subtype", "Name", "Qualifier", "Attachement", "Source");
 
 				final Set<String> headers = new HashSet<>(parser.getHeaderNames());
 
@@ -157,10 +150,15 @@ public class SyncExamsController {
 					default -> null;
 					};
 					final String name = PCUtils.nullIfBlank(record.get("Name"));
-					final String statement = PCUtils.nullIfBlank(record.get("Mission statement"));
-					final String solution = PCUtils.nullIfBlank(record.get("Solution"));
-					final String data = PCUtils.nullIfBlank(record.get("Data"));
-					final String oral = PCUtils.nullIfBlank(record.get("Oral"));
+					final ExamAttachmentType qualifier = switch (record.get("Qualifier").trim().toUpperCase()) {
+					case "SOLUTION" -> ExamAttachmentType.SOLUTION;
+					case "STATEMENT" -> ExamAttachmentType.STATEMENT;
+					case "ORAL" -> ExamAttachmentType.ORAL;
+					case "DATA" -> ExamAttachmentType.DATA;
+					default -> null;
+					};
+					final String attachement = PCUtils.nullIfBlank(record.get("Attachement"));
+					final String source = PCUtils.nullIfBlank(record.get("Source"));
 
 					if (season == null) {
 						emitter.send(SseEmitter.event().name("warning").data("Unknown season: " + Arrays.toString(record.values())));
@@ -170,9 +168,13 @@ public class SyncExamsController {
 						emitter.send(SseEmitter.event().name("warning").data("Unknown subtype: " + Arrays.toString(record.values())));
 						continue;
 					}
-					if (statement == null && solution == null && data == null && oral == null) {
+					if (qualifier == null) {
+						emitter.send(SseEmitter.event().name("warning").data("Unknown qualifier: " + Arrays.toString(record.values())));
+						continue;
+					}
+					if (attachement == null) {
 						emitter.send(
-								SseEmitter.event().name("warning").data("Exam with no attachments: " + Arrays.toString(record.values())));
+								SseEmitter.event().name("warning").data("Exam with no attachment: " + Arrays.toString(record.values())));
 						continue;
 					}
 
@@ -202,21 +204,68 @@ public class SyncExamsController {
 
 					examData = this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype));
 
-					final BiConsumer<String, String> storeAttachment = (qualifier, path) -> {
-						if (path == null) {
-							return;
+					final ExamAttachmentData statementData = this.examAttachmentTable
+							.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examData.getId(), qualifier, name, attachement));
+
+					if (source != null) {
+						final String[] sourceTokens = source.split(":");
+						final String sourceSection = sourceTokens[0];
+						final String sourceSubject = sourceTokens[1];
+						final int sourceYear = Integer.parseInt(sourceTokens[2]);
+						final ExamSeason sourceSeason = switch (sourceTokens[3]) {
+						case "ETE", "SUMMER" -> ExamSeason.SUMMER;
+						case "SEPT" -> ExamSeason.SEPTEMBER;
+						default -> null;
+						};
+						final ExamType sourceSubtype = switch (sourceTokens[4]) {
+						case "NORMAL" -> ExamType.NORMAL;
+						case "REP" -> ExamType.REP;
+						case "AJOU" -> ExamType.AJOU;
+						default -> null;
+						};
+						final String sourceName = PCUtils.nullIfBlank(sourceTokens[5]);
+						final ExamAttachmentType sourceQualifier = switch (sourceTokens[6]) {
+						case "SOLUTION" -> ExamAttachmentType.SOLUTION;
+						case "STATEMENT" -> ExamAttachmentType.STATEMENT;
+						case "ORAL" -> ExamAttachmentType.ORAL;
+						case "DATA" -> ExamAttachmentType.DATA;
+						default -> null;
+						};
+
+						final ExamData parentData = new ExamData(subjectDatas.get(sourceSection).get(sourceSubject).getId(),
+								sourceYear,
+								sourceSeason,
+								sourceSubtype);
+						try {
+							examTable.loadUnique(parentData);
+						} catch (NoMatchingRowException e) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam not found: " + source));
+							continue;
 						}
 
-						final ExamAttachmentData statementData = new ExamAttachmentData(examData.getId(), qualifier, name, path);
-						if (!this.examAttachmentTable.existsUnique(statementData)) {
-							this.examAttachmentTable.insertAndReload(statementData);
+						final ExamAttachmentData parentAttachmentData = new ExamAttachmentData(parentData.getId(),
+								sourceQualifier,
+								sourceName);
+						try {
+							examAttachmentTable.loadUnique(parentAttachmentData);
+						} catch (final TooManyMatchingRowsException e) {
+							emitter.send(SseEmitter.event()
+									.name("warning")
+									.data("Exam attachment duplicate: " + source + " matching:\n"
+											+ examAttachmentTable
+													.loadByUnique(new ExamAttachmentData(parentData.getId(), sourceQualifier, sourceName))
+													.stream()
+													.map(c -> " * " + c.toString())
+													.collect(Collectors.joining("\n"))));
+							continue;
+						} catch (NoMatchingRowException e) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
+							continue;
 						}
-					};
 
-					storeAttachment.accept("STATEMENT", statement);
-					storeAttachment.accept("SOLUTION", solution);
-					storeAttachment.accept("DATA", data);
-					storeAttachment.accept("ORAL", oral);
+						statementData.setParentId(parentAttachmentData.getId());
+						examAttachmentTable.update(statementData);
+					}
 
 					emitter.send(SseEmitter.event().name("progress").data(index + "/" + rowCount));
 				}

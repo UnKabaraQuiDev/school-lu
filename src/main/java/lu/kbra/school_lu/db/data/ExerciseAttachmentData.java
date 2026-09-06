@@ -14,6 +14,7 @@ import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
+import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExerciseTable;
 
@@ -37,8 +38,8 @@ public class ExerciseAttachmentData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
-	@MaxLength(64)
-	private String qualifier;
+	@MaxLength(16)
+	private ExamAttachmentType qualifier;
 
 	@Column
 	@Unique(1)
@@ -70,13 +71,13 @@ public class ExerciseAttachmentData implements DatabaseEntry {
 		this.location = location;
 	}
 
-	public ExerciseAttachmentData(Long exerciseId, String qualifier, Integer alternativeIndex) {
+	public ExerciseAttachmentData(Long exerciseId, ExamAttachmentType qualifier, Integer alternativeIndex) {
 		this.exerciseId = exerciseId;
 		this.qualifier = qualifier;
 		this.alternativeIndex = alternativeIndex;
 	}
 
-	public ExerciseAttachmentData(Long exerciseId, String qualifier, Integer alternativeIndex, String location) {
+	public ExerciseAttachmentData(Long exerciseId, ExamAttachmentType qualifier, Integer alternativeIndex, String location) {
 		this.exerciseId = exerciseId;
 		this.qualifier = qualifier;
 		this.alternativeIndex = alternativeIndex;
@@ -85,7 +86,7 @@ public class ExerciseAttachmentData implements DatabaseEntry {
 
 	public ExerciseAttachmentData(
 			Long exerciseId,
-			String qualifier,
+			ExamAttachmentType qualifier,
 			Integer alternativeIndex,
 			String location,
 			Long examAttachmentId,
