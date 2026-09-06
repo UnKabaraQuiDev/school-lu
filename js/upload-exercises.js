@@ -16,6 +16,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     const allowExamAttachmentCreation =
         document.getElementById("allow-exam-attachment-creation");
 
+    const allowTagCreation =
+        document.getElementById("allow-tag-creation");
+
     const submitButton =
         document.getElementById("submit-button");
 
@@ -80,6 +83,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         formData.append(
             "allowExamAttachmentCreation",
             allowExamAttachmentCreation.checked
+        );
+        formData.append(
+            "allowTagCreation",
+            allowTagCreation.checked
         );
 
         try {
@@ -261,6 +268,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         allowSubjectCreation.disabled = loading;
         allowExamCreation.disabled = loading;
         allowExamAttachmentCreation.disabled = loading;
+        allowTagCreation.disabled = loading;
 
         if (loading) {
             submitButton.textContent = "Updating...";
