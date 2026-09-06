@@ -17,6 +17,6 @@ public abstract class TagTable extends DeferredDatabaseTable<TagData> {
 	}
 
 	@Query
-	public abstract List<TagData> loadAll();
+	public abstract List<TagData> all();
 
 }
