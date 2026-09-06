@@ -5,7 +5,7 @@ import java.lang.reflect.Type;
 
 import lu.kbra.pclib.db.domain.column.type.ColumnType;
 import lu.kbra.pclib.db.domain.column.type.EncodingType;
-import lu.kbra.pclib.db.utils.impl.SQLEncodingTypeProvider;
+import lu.kbra.pclib.db.utils.impl.EncodingTypeProvider;
 
 import lombok.Getter;
 
@@ -14,7 +14,7 @@ public class Rectangle2DFloatColumnType implements ColumnType<Rectangle2D.Float,
 
 	private final EncodingType<Rectangle2D.Float> encodingType;
 
-	public Rectangle2DFloatColumnType(SQLEncodingTypeProvider etp) {
+	public Rectangle2DFloatColumnType(EncodingTypeProvider etp) {
 		encodingType = etp.getTypeFor(Rectangle2D.Float.class);
 	}
 

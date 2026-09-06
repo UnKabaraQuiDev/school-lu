@@ -8,11 +8,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -35,14 +38,18 @@ import lu.kbra.school_lu.db.data.ExamAttachmentData;
 import lu.kbra.school_lu.db.data.ExamData;
 import lu.kbra.school_lu.db.data.ExerciseAttachmentData;
 import lu.kbra.school_lu.db.data.ExerciseData;
+import lu.kbra.school_lu.db.data.ExerciseTagData;
 import lu.kbra.school_lu.db.data.SectionData;
 import lu.kbra.school_lu.db.data.SubjectData;
+import lu.kbra.school_lu.db.data.TagData;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.ExerciseAttachmentTable;
 import lu.kbra.school_lu.db.table.ExerciseTable;
+import lu.kbra.school_lu.db.table.ExerciseTagTable;
 import lu.kbra.school_lu.db.table.SectionTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
+import lu.kbra.school_lu.db.table.TagTable;
 import lu.kbra.school_lu.service.UserPermissionService;
 
 @RestController
@@ -54,6 +61,8 @@ public class SyncExercisesController {
 	private final ExamAttachmentTable examAttachmentTable;
 	private final ExerciseTable exerciseTable;
 	private final ExerciseAttachmentTable exerciseAttachmentTable;
+	private final ExerciseTagTable exerciseTagTable;
+	private final TagTable tagTable;
 	private final UserPermissionService userPermissionService;
 	private final Executor executor;
 
@@ -64,6 +73,8 @@ public class SyncExercisesController {
 			final ExamAttachmentTable examAttachmentTable,
 			final ExerciseTable exerciseTable,
 			final ExerciseAttachmentTable exerciseAttachmentTable,
+			final ExerciseTagTable exerciseTagTable,
+			final TagTable tagTable,
 			final UserPermissionService userPermissionService,
 			@Qualifier("applicationTaskExecutor") final Executor executor) {
 		this.sectionTable = sectionTable;
@@ -72,6 +83,8 @@ public class SyncExercisesController {
 		this.examAttachmentTable = examAttachmentTable;
 		this.exerciseTable = exerciseTable;
 		this.exerciseAttachmentTable = exerciseAttachmentTable;
+		this.exerciseTagTable = exerciseTagTable;
+		this.tagTable = tagTable;
 		this.userPermissionService = userPermissionService;
 		this.executor = executor;
 	}
@@ -83,7 +96,8 @@ public class SyncExercisesController {
 			@RequestParam final boolean allowSectionCreation,
 			@RequestParam final boolean allowSubjectCreation,
 			@RequestParam final boolean allowExamCreation,
-			@RequestParam final boolean allowExamAttachmentCreation) {
+			@RequestParam final boolean allowExamAttachmentCreation,
+			@RequestParam final boolean allowTagCreation) {
 
 		this.userPermissionService.requireAllPermissions(userId, UserPermissionType.MANAGE_EXERCISE);
 
@@ -125,7 +139,8 @@ public class SyncExercisesController {
 						"Alternative Index",
 						"Additive box",
 						"Subtractive boxes",
-						"Attachment");
+						"Attachment",
+						"ExamSource");
 
 				final Set<String> headers = new HashSet<>(parser.getHeaderNames());
 
@@ -194,6 +209,7 @@ public class SyncExercisesController {
 					final String additiveBox = PCUtils.nullIfBlank(record.get("Additive box"));
 					final String subtractiveBoxes = PCUtils.nullIfBlank(record.get("Subtractive boxes"));
 					final String attachment = record.get("Attachment");
+					final String[] tags = record.get("Tags").split("\\s+");
 
 					if (source == null) {
 						emitter.send(
@@ -279,6 +295,65 @@ public class SyncExercisesController {
 
 					if (!this.exerciseAttachmentTable.existsUnique(exerciseAttachment)) {
 						this.exerciseAttachmentTable.insertAndReload(exerciseAttachment);
+					}
+
+					{
+						final List<ExerciseTagData> existingExTags = this.exerciseTagTable.byExercise(exerciseData);
+						final Set<String> neededTags = Arrays.stream(tags).map(String::toLowerCase).collect(Collectors.toSet());
+						final Set<Long> existingTagIds = existingExTags.stream().map(ExerciseTagData::getTagId).collect(Collectors.toSet());
+						final List<TagData> existingTags = this.tagTable.loadAll(existingTagIds.stream().map(TagData::new).toList());
+
+						final Map<Long, TagData> existingTagsById = existingTags.stream()
+								.collect(Collectors.toMap(TagData::getId, Function.identity()));
+
+						final List<ExerciseTagData> removingExTags = existingExTags.stream().filter(exTag -> {
+							final TagData tagData = existingTagsById.get(exTag.getTagId());
+
+							return tagData == null || !neededTags.contains(tagData.getName().toLowerCase());
+						}).toList();
+
+						if (!removingExTags.isEmpty()) {
+							this.exerciseTagTable.deleteAll(removingExTags);
+						}
+
+						final List<TagData> neededTagDatas = neededTags.stream()
+								.map(TagData::new)
+								.map(tagTable::loadUniqueIfExists)
+								.filter(Optional::isPresent)
+								.map(Optional::get)
+								.toList();
+
+						final Set<String> existingTagNames = neededTagDatas.stream()
+								.map(tagData -> tagData.getName().toLowerCase())
+								.collect(Collectors.toSet());
+
+						final List<TagData> missingTags = neededTags.stream()
+								.filter(tagName -> !existingTagNames.contains(tagName))
+								.map(TagData::new)
+								.toList();
+
+						final List<TagData> reloadedMissingTags = missingTags.isEmpty() ? List.of()
+								: allowTagCreation ? this.tagTable.insertAndReloadAll(missingTags)
+								: List.of();
+
+						final List<TagData> allNeededTagDatas = Stream.concat(neededTagDatas.stream(), reloadedMissingTags.stream())
+								.toList();
+
+						final Set<Long> removingTagIds = removingExTags.stream().map(ExerciseTagData::getTagId).collect(Collectors.toSet());
+
+						final Set<Long> remainingTagIds = existingExTags.stream()
+								.map(ExerciseTagData::getTagId)
+								.filter(tagId -> !removingTagIds.contains(tagId))
+								.collect(Collectors.toSet());
+
+						final List<ExerciseTagData> addingExTags = allNeededTagDatas.stream()
+								.filter(tagData -> !remainingTagIds.contains(tagData.getId()))
+								.map(tagData -> new ExerciseTagData(exerciseData.getId(), tagData.getId()))
+								.toList();
+
+						if (!addingExTags.isEmpty()) {
+							this.exerciseTagTable.insertAndReloadAll(addingExTags);
+						}
 					}
 
 					emitter.send(SseEmitter.event().name("progress").data(index + "/" + rowCount));
