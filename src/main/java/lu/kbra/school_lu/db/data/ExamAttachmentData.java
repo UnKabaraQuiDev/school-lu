@@ -1,5 +1,7 @@
 package lu.kbra.school_lu.db.data;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
@@ -10,10 +12,9 @@ import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
+import lu.kbra.school_lu.data.ExamAttachmentType;
+import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExamTable;
-
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -31,10 +32,11 @@ public class ExamAttachmentData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
-	@MaxLength(64)
-	private String qualifier;
+	@MaxLength(16)
+	private ExamAttachmentType qualifier;
 
 	@Column
+	@Unique(1)
 	@Nullable
 	@MaxLength(128)
 	private String name;
@@ -42,6 +44,11 @@ public class ExamAttachmentData implements DatabaseEntry {
 	@Column
 	@Unique(2)
 	private String location;
+
+	@Column
+	@Nullable
+	@ForeignKey(table = ExamAttachmentTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
+	private Long parentId;
 
 	public ExamAttachmentData(Long id) {
 		this.id = id;
@@ -51,12 +58,13 @@ public class ExamAttachmentData implements DatabaseEntry {
 		this.location = location;
 	}
 
-	public ExamAttachmentData(Long examId, String qualifier) {
+	public ExamAttachmentData(Long examId, ExamAttachmentType qualifier, String name) {
 		this.examId = examId;
 		this.qualifier = qualifier;
+		this.name = name;
 	}
 
-	public ExamAttachmentData(Long examId, String qualifier, String name, String location) {
+	public ExamAttachmentData(Long examId, ExamAttachmentType qualifier, String name, String location) {
 		this.examId = examId;
 		this.qualifier = qualifier;
 		this.name = name;
