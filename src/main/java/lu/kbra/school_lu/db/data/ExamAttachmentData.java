@@ -1,7 +1,5 @@
 package lu.kbra.school_lu.db.data;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
@@ -15,6 +13,9 @@ import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExamTable;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor

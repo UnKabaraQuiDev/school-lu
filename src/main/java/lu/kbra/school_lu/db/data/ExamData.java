@@ -1,20 +1,19 @@
 package lu.kbra.school_lu.db.data;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
-import lu.kbra.pclib.db.annotations.entry.Nullable;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
-import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
