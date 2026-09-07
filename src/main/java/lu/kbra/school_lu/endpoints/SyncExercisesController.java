@@ -362,6 +362,7 @@ public class SyncExercisesController {
 						final List<ExerciseTagData> addingExTags = allNeededTagDatas.stream()
 								.filter(tagData -> !remainingTagIds.contains(tagData.getId()))
 								.map(tagData -> new ExerciseTagData(exerciseData.getId(), tagData.getId()))
+								.distinct()
 								.toList();
 
 						if (!addingExTags.isEmpty()) {

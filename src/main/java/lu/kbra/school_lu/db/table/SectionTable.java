@@ -4,9 +4,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
+import lu.kbra.pclib.db.annotations.view.Table;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
+import lu.kbra.school_lu.db.data.ExamData;
 import lu.kbra.school_lu.db.data.SectionData;
 
 @Component
@@ -21,5 +24,8 @@ public abstract class SectionTable extends DeferredDatabaseTable<SectionData> {
 
 	@Query(retColumns = { "{M:name}" })
 	public abstract List<String> allNames();
+
+	@Query(retColumns = { "{M:name}" }, tables = { @Table(typeName = SubjectTable.class), @Table(typeName = ExamTable.class) })
+	public abstract String nameByExam(@Param ExamData examData);
 
 }
