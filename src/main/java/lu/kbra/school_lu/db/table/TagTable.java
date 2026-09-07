@@ -1,9 +1,11 @@
 package lu.kbra.school_lu.db.table;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
@@ -18,5 +20,8 @@ public abstract class TagTable extends DeferredDatabaseTable<TagData> {
 
 	@Query
 	public abstract List<TagData> all();
+
+	@Query
+	public abstract List<String> byName(@Param Set<String> name);
 
 }

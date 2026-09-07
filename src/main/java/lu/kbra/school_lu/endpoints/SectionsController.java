@@ -7,9 +7,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 import lu.kbra.school_lu.db.table.SectionTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/p")

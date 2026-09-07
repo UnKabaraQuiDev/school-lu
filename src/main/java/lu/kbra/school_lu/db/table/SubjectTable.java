@@ -1,9 +1,11 @@
 package lu.kbra.school_lu.db.table;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import lu.kbra.pclib.db.annotations.query.Any;
 import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
 import lu.kbra.pclib.db.annotations.view.Table;
@@ -26,5 +28,8 @@ public abstract class SubjectTable extends DeferredDatabaseTable<SubjectData> {
 
 	@Query(retColumns = { "{M:name}" }, tables = { @Table(typeName = SectionTable.class) })
 	public abstract List<String> allNames(@Param("{M:SectionTable:name}") String section);
+
+	@Query(tables = { @Table(typeName = SectionTable.class) })
+	public abstract List<SubjectData> bySection(@Param("{M:SectionTable:name}") String section, @Param @Any Set<String> name);
 
 }
