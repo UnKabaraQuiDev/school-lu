@@ -16,7 +16,7 @@ public abstract class ExamTable extends DeferredDatabaseTable<ExamData> {
 		super(database);
 	}
 
-	@Query(distinct = true)
+	@Query
 	public abstract ExamData byExercise(@Param ExerciseData c);
 
 }

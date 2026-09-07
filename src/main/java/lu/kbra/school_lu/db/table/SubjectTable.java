@@ -34,7 +34,7 @@ public abstract class SubjectTable extends DeferredDatabaseTable<SubjectData> {
 	public abstract List<SubjectData>
 			bySection(@Param("{M:SectionTable:name}") String section, @Param("{M:SubjectTable:name}") @Any Set<String> name);
 
-	@Query(retColumns = { "{M:name}" }, tables = { @Table(typeName = ExamTable.class) })
+	@Query(retColumns = { "{M:name}" })
 	public abstract String nameByExam(@Param ExamData examData);
 
 }
