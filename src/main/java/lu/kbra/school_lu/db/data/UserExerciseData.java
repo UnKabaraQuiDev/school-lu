@@ -24,14 +24,11 @@ public class UserExerciseData implements DatabaseEntry {
 
 	@Column
 	@PrimaryKey
-	@AutoIncrement
-	private Long id;
-
-	@Column
 	@ForeignKey(table = UserTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
 	private Long userId;
 
 	@Column
+	@PrimaryKey
 	@ForeignKey(table = ExerciseTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
 	private Long exerciseId;
 
@@ -43,8 +40,9 @@ public class UserExerciseData implements DatabaseEntry {
 	@MaxLength(24)
 	private ExerciseStatus status;
 
-	public UserExerciseData(final Long id) {
-		this.id = id;
+	public UserExerciseData(Long userId, Long exerciseId) {
+		this.userId = userId;
+		this.exerciseId = exerciseId;
 	}
 
 	public UserExerciseData(final Long userId, final Long exerciseId, final Instant timestamp, final ExerciseStatus status) {
@@ -58,4 +56,5 @@ public class UserExerciseData implements DatabaseEntry {
 	public UserExerciseData clone() {
 		return PCUtils.safeClone(super::clone);
 	}
+
 }
