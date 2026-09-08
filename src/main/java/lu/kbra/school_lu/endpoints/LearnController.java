@@ -11,14 +11,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
@@ -37,13 +41,22 @@ import lu.kbra.school_lu.db.table.SectionTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
 import lu.kbra.school_lu.db.table.TagTable;
 import lu.kbra.school_lu.db.table.TagTable.TagProp;
+import lu.kbra.school_lu.service.UserConfigService;
 import lu.kbra.school_lu.service.UserService;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 public class LearnController {
 
 	private static final int LIMIT_EXERCISE_CHOICE = 5;
+	private static final String LEARN_SAVED_STATE = "LEARN_SAVED_STATE";
+
 	private final SectionTable sectionTable;
 	private final SubjectTable subjectTable;
 	private final ExamTable examTable;
@@ -52,12 +65,16 @@ public class LearnController {
 	private final ExerciseAttachmentTable exerciseAttachmentTable;
 	private final ExerciseTagTable exerciseTagTable;
 	private final TagTable tagTable;
+
 	private final UserService userService;
+	private final UserConfigService userConfigService;
+
+	private final ObjectMapper objectMapper;
 
 	public record NextRequest(
 			boolean withSolutionOnly,
-			Map<String, Set<String>> subjects,
-			Set<String> requiredTags,
+			@NotEmpty Map<@NotBlank @NotNull String, @NotEmpty Set<@NotBlank @NotNull String>> subjects,
+			Set<@NotBlank @NotNull String> requiredTags,
 			boolean excludeSuccess) {
 	}
 
@@ -79,14 +96,36 @@ public class LearnController {
 	public record TagBottleneck(String name, int count, int negativeCount, double negativePercentage) {
 	}
 
+	@PutMapping("/learn/save")
+	public void save(@AuthenticationPrincipal final UserId userId, @RequestBody final NextRequest request) throws JsonProcessingException {
+		this.userConfigService.setConfig(userId, LearnController.LEARN_SAVED_STATE, this.objectMapper.writeValueAsString(request));
+	}
+
+	@GetMapping("/learn/restore")
+	public ResponseEntity<NextRequest> restore(@AuthenticationPrincipal final UserId userId) throws JsonProcessingException {
+		final String content = this.userConfigService.getConfig(userId, LearnController.LEARN_SAVED_STATE);
+		final NextRequest result;
+		if (content != null) {
+			result = this.objectMapper.readValue(content, NextRequest.class);
+		} else {
+			result = null;
+		}
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(result);
+	}
+
 	@PostMapping("/learn/next")
-	public ResponseEntity<?> next(@AuthenticationPrincipal final UserId userId, @RequestBody final NextRequest request) {
+	public ResponseEntity<?> next(@AuthenticationPrincipal final UserId userId, @RequestBody @Valid final NextRequest request) {
 		final UserData userData = this.userService.get(userId);
 		final Set<SubjectData> subjects = request.subjects()
 				.entrySet()
 				.stream()
 				.flatMap(section -> this.subjectTable.bySection(section.getKey(), section.getValue()).stream())
 				.collect(Collectors.toSet());
+
+		if (subjects.isEmpty()) {
+			// TODO: better error
+			return null;
+		}
 
 		final List<ExerciseData> exercises;
 		if (request.withSolutionOnly()) {
@@ -95,21 +134,24 @@ public class LearnController {
 							request.requiredTags(),
 							userData,
 							ExerciseStatus.SUCCESS,
-							LIMIT_EXERCISE_CHOICE)
+							LearnController.LIMIT_EXERCISE_CHOICE)
 					: this.exerciseTable.withSolutionAnySubjectAllTagsNotByStatus(subjects,
 							request.requiredTags(),
 							userData,
 							null,
-							LIMIT_EXERCISE_CHOICE);
+							LearnController.LIMIT_EXERCISE_CHOICE);
 		} else {
 			exercises = request.excludeSuccess()
 					? this.exerciseTable.byAnySubjectAllTagsNotByStatus(subjects,
 							request.requiredTags(),
 							userData,
 							ExerciseStatus.SUCCESS,
-							LIMIT_EXERCISE_CHOICE)
-					: this.exerciseTable
-							.byAnySubjectAllTagsNotByStatus(subjects, request.requiredTags(), userData, null, LIMIT_EXERCISE_CHOICE);
+							LearnController.LIMIT_EXERCISE_CHOICE)
+					: this.exerciseTable.byAnySubjectAllTagsNotByStatus(subjects,
+							request.requiredTags(),
+							userData,
+							null,
+							LearnController.LIMIT_EXERCISE_CHOICE);
 		}
 		if (exercises.isEmpty()) {
 			return this.whyNoResults(userData, subjects, request);
@@ -187,7 +229,6 @@ public class LearnController {
 							.countByAnySubjectAllTagsNotByStatus(subjects, Collections.EMPTY_SET, userData, ExerciseStatus.SUCCESS)
 					: this.exerciseTable.countByAnySubjectAllTagsNotByStatus(subjects, Collections.EMPTY_SET, userData, null);
 		}
-		System.err.println(previousCount);
 
 		bottlenecks.add(new TagBottleneck("", previousCount, 0, 0));
 
@@ -203,16 +244,6 @@ public class LearnController {
 		bottlenecks.sort(Comparator.comparing(c -> -c.count()));
 
 		return ResponseEntity.badRequest().body(new ErrorBody("Tags too restrictive.", bottlenecks));
-	}
-
-	@GetMapping("/p/test")
-	public Object test(@RequestBody NextRequest request) {
-		return this.next(new UserId(1L), request);
-//				new NextRequest(false,
-//						PCUtils.hashMap("CA", PCUtils.hashSet("MATHE")),
-//						PCUtils.hashSet("eq_log", "graphique", "probleme"),
-//						false));
-//		return this.tagTable.propByName(Set.of("eq_log", "graphique"));
 	}
 
 }

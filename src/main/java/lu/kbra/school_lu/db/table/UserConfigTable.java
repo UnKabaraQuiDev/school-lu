@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
+import lu.kbra.pclib.db.annotations.query.Query.Type;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
 import lu.kbra.school_lu.db.data.UserConfigData;
@@ -19,5 +20,8 @@ public abstract class UserConfigTable extends DeferredDatabaseTable<UserConfigDa
 
 	@Query
 	public abstract List<UserConfigData> byUserId(@Param long userId);
+
+	@Query(strategy = Type.SINGLE_NULL)
+	public abstract UserConfigData byUserIdAndKey(@Param long userId, @Param String key);
 
 }
