@@ -1,4 +1,4 @@
-async function login(username, password) {
+async function login(username, password, rememberMe) {
     return await fetch(
         apiUrl("login"),
         {
@@ -10,7 +10,8 @@ async function login(username, password) {
             },
             body: new URLSearchParams({
                 username: username,
-                password: password
+                password: password,
+                "remember-me": rememberMe
             })
         }
     );
@@ -49,7 +50,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const response = await login(
                 form.username.value,
-                form.password.value
+                form.password.value,
+                form.rememberMe.checked
             );
 
             if (response.ok) {
