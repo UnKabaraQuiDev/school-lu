@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,11 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.ExerciseStatus;
-import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.db.data.ExamData;
 import lu.kbra.school_lu.db.data.ExerciseData;
 import lu.kbra.school_lu.db.data.SubjectData;
@@ -97,13 +96,13 @@ public class LearnController {
 	}
 
 	@PutMapping("/learn/save")
-	public void save(@AuthenticationPrincipal final UserId userId, @RequestBody final NextRequest request) throws JsonProcessingException {
-		this.userConfigService.setConfig(userId, LearnController.LEARN_SAVED_STATE, this.objectMapper.writeValueAsString(request));
+	public void save(@CurrentUser final UserData userData, @RequestBody final NextRequest request) throws JsonProcessingException {
+		this.userConfigService.setConfig(userData, LearnController.LEARN_SAVED_STATE, this.objectMapper.writeValueAsString(request));
 	}
 
 	@GetMapping("/learn/restore")
-	public ResponseEntity<NextRequest> restore(@AuthenticationPrincipal final UserId userId) throws JsonProcessingException {
-		final String content = this.userConfigService.getConfig(userId, LearnController.LEARN_SAVED_STATE);
+	public ResponseEntity<NextRequest> restore(@CurrentUser final UserData userData) throws JsonProcessingException {
+		final String content = this.userConfigService.getConfig(userData, LearnController.LEARN_SAVED_STATE);
 		final NextRequest result;
 		if (content != null) {
 			result = this.objectMapper.readValue(content, NextRequest.class);
@@ -114,8 +113,7 @@ public class LearnController {
 	}
 
 	@PostMapping("/learn/next")
-	public ResponseEntity<?> next(@AuthenticationPrincipal final UserId userId, @RequestBody @Valid final NextRequest request) {
-		final UserData userData = this.userService.get(userId);
+	public ResponseEntity<?> next(@CurrentUser final UserData userData, @RequestBody @Valid final NextRequest request) {
 		final Set<SubjectData> subjects = request.subjects()
 				.entrySet()
 				.stream()

@@ -21,7 +21,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,10 +30,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
 import lu.kbra.pclib.db.exception.TooManyMatchingRowsException;
+import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
-import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
 import lu.kbra.school_lu.db.data.ExamData;
@@ -44,6 +43,7 @@ import lu.kbra.school_lu.db.data.ExerciseTagData;
 import lu.kbra.school_lu.db.data.SectionData;
 import lu.kbra.school_lu.db.data.SubjectData;
 import lu.kbra.school_lu.db.data.TagData;
+import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.ExerciseAttachmentTable;
@@ -93,7 +93,7 @@ public class SyncExercisesController {
 
 	@PostMapping("/exam-db/exercises/update-index")
 	public SseEmitter updateIndex(
-			@AuthenticationPrincipal final UserId userId,
+			@CurrentUser final UserData userData,
 			@RequestParam final MultipartFile file,
 			@RequestParam final boolean allowSectionCreation,
 			@RequestParam final boolean allowSubjectCreation,
@@ -101,7 +101,7 @@ public class SyncExercisesController {
 			@RequestParam final boolean allowExamAttachmentCreation,
 			@RequestParam final boolean allowTagCreation) {
 
-		this.userPermissionService.requireAllPermissions(userId, UserPermissionType.MANAGE_EXERCISE);
+		this.userPermissionService.requireAllPermissions(userData, UserPermissionType.MANAGE_EXERCISE);
 
 		final SseEmitter emitter = new SseEmitter(0L);
 
