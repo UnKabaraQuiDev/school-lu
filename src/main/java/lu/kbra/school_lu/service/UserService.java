@@ -1,18 +1,18 @@
 package lu.kbra.school_lu.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import lu.kbra.school_lu.data.UserAuthentication;
-import lu.kbra.school_lu.data.UserDetailsImpl;
-import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.UserTable;
 import lu.kbra.school_lu.exceptions.EmailAlreadyExistsException;
@@ -27,16 +27,28 @@ public class UserService implements UserDetailsService {
 	private final UserTable userTable;
 	private final PasswordEncoder passwordEncoder;
 
-	public UserData get(final UserId userId) {
-		return this.userTable.byId(userId.id());
+	public UserData get(final String name) {
+		return this.userTable.byUsername(name).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 	}
 
-	public UserData get(final long id) {
-		return this.userTable.byId(id);
+	public Optional<UserData> optGet(final String name) {
+		return this.userTable.byUsername(name);
 	}
 
-	public UserData get(final UserAuthentication auth) {
-		return this.userTable.byId(auth.getPrincipal().id());
+	public UserData get(final UserDetails auth) {
+		return this.userTable.byUsername(auth.getUsername()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	}
+
+	public Optional<UserData> optGet(final UserDetails auth) {
+		return this.userTable.byUsername(auth.getUsername());
+	}
+
+	public UserData get(final Authentication auth) {
+		return this.userTable.byUsername(auth.getName()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	}
+
+	public Optional<UserData> optGet(final Authentication auth) {
+		return this.userTable.byUsername(auth.getName());
 	}
 
 	public UserData register(String username, String email, final String password)
@@ -62,18 +74,18 @@ public class UserService implements UserDetailsService {
 	}
 
 	public void updateLastLogin(final Authentication authentication) {
-		final UserAuthentication userAuthentication = (UserAuthentication) authentication;
+		final String username = authentication.getName();
 
-		final UserId userId = userAuthentication.getPrincipal();
-		final UserData user = this.userTable.byId(userId.id());
+		final UserData user = this.userTable.byUsername(username).orElseThrow();
+
 		user.setLastLogin(Instant.now());
-
 		this.userTable.updateAndReload(user);
 	}
 
 	@Override
 	public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
-		return new UserDetailsImpl(this.userTable.byUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found")));
+		final UserData userData = this.userTable.byUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		return new User(userData.getUsername(), userData.getPasswordHash(), userData.isEnabled(), true, true, true, List.of());
 	}
 
 }

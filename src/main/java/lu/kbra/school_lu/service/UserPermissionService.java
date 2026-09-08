@@ -11,8 +11,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import lu.kbra.pclib.db.impl.DeferredDBTransaction;
-import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.data.UserPermissionType;
+import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.data.UserPermissionData;
 import lu.kbra.school_lu.db.table.UserPermissionTable;
 
@@ -25,27 +25,30 @@ import lombok.extern.slf4j.Slf4j;
 public class UserPermissionService {
 
 	private final UserPermissionTable userPermissionTable;
+	private final UserService userService;
 
-	public EnumSet<UserPermissionType> getPermissions(final UserId id) {
-		return this.userPermissionTable.permissionsByUserId(id.id())
+	public EnumSet<UserPermissionType> getPermissions(final UserData userData) {
+		return this.userPermissionTable.permissionsByUser(userData)
 				.stream()
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(UserPermissionType.class)));
 	}
 
-	public void setPermissions(final UserId id, final Set<UserPermissionType> set) {
+	public void setPermissions(final UserData userData, final Set<UserPermissionType> set) {
 		try (DeferredDBTransaction transaction = this.userPermissionTable.getDatabase().createTransaction()) {
 			final UserPermissionTable userPermissionProxy = transaction.use(this.userPermissionTable);
 
-			final List<UserPermissionData> datas = userPermissionProxy.byUserId(id.id());
+			final List<UserPermissionData> datas = userPermissionProxy.byUser(userData);
 			final List<UserPermissionData> toKeep = new ArrayList<>();
-			datas.removeIf(c -> {
-				if (set.contains(c.getPermission())) {
-					toKeep.add(c);
+
+			datas.removeIf(permission -> {
+				if (set.contains(permission.getPermission())) {
+					toKeep.add(permission);
 					return true;
 				}
 
 				return false;
 			});
+
 			userPermissionProxy.deleteAll(datas);
 			userPermissionProxy.updateAll(toKeep);
 
@@ -53,21 +56,29 @@ public class UserPermissionService {
 		}
 	}
 
-	public void requireAnyPermission(final UserId userId, final UserPermissionType... manageExam) {
-		final Set<UserPermissionType> perms = this.getPermissions(userId);
-		if (!Arrays.stream(manageExam).anyMatch(perms::contains)) {
-			UserPermissionService.log.info(
-					"Permission refused for user: " + userId + ", required any of: " + Arrays.toString(manageExam) + ", got: " + perms);
-			throw new AccessDeniedException("Permission refused, required any of: " + Arrays.toString(manageExam) + ", got: " + perms);
+	public void requireAnyPermission(final UserData userData, final UserPermissionType... permissions) {
+		final Set<UserPermissionType> perms = this.getPermissions(userData);
+
+		if (!Arrays.stream(permissions).anyMatch(perms::contains)) {
+			UserPermissionService.log.info("Permission refused for user: {}, required any of: {}, got: {}",
+					userData.getUsername(),
+					Arrays.toString(permissions),
+					perms);
+
+			throw new AccessDeniedException("Permission refused, required any of: " + Arrays.toString(permissions) + ", got: " + perms);
 		}
 	}
 
-	public void requireAllPermissions(final UserId userId, final UserPermissionType... manageExam) {
-		final Set<UserPermissionType> perms = this.getPermissions(userId);
-		if (!Arrays.stream(manageExam).allMatch(perms::contains)) {
-			UserPermissionService.log.info(
-					"Permission refused for user: " + userId + ", required all of: " + Arrays.toString(manageExam) + ", got: " + perms);
-			throw new AccessDeniedException("Permission refused, required all of: " + Arrays.toString(manageExam) + ", got: " + perms);
+	public void requireAllPermissions(final UserData userData, final UserPermissionType... permissions) {
+		final Set<UserPermissionType> perms = this.getPermissions(userData);
+
+		if (!Arrays.stream(permissions).allMatch(perms::contains)) {
+			UserPermissionService.log.info("Permission refused for user: {}, required all of: {}, got: {}",
+					userData.getUsername(),
+					Arrays.toString(permissions),
+					perms);
+
+			throw new AccessDeniedException("Permission refused, required all of: " + Arrays.toString(permissions) + ", got: " + perms);
 		}
 	}
 

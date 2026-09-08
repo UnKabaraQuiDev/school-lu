@@ -23,12 +23,12 @@ public abstract class UserPermissionTable extends DeferredDatabaseTable<UserPerm
 	public abstract List<UserPermissionType> permissionsByUserId(@Param final long userId);
 
 	@Query(retColumns = { "{M:permission}" })
-	public abstract List<UserPermissionType> permissionsByUserId(@Param final UserData userId);
+	public abstract List<UserPermissionType> permissionsByUser(@Param final UserData userId);
 
 	@Query
 	public abstract List<UserPermissionData> byUserId(@Param final long userId);
 
 	@Query
-	public abstract List<UserPermissionData> byUserId(@Param final UserData userId);
+	public abstract List<UserPermissionData> byUser(@Param final UserData userId);
 
 }
