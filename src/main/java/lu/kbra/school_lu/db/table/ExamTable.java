@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
+import lu.kbra.pclib.db.annotations.view.Table;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
 import lu.kbra.school_lu.db.data.ExamData;
@@ -16,7 +17,12 @@ public abstract class ExamTable extends DeferredDatabaseTable<ExamData> {
 		super(database);
 	}
 
-	@Query
+	@Query(
+			tables = {
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExerciseTable.class) }
+	)
 	public abstract ExamData byExercise(@Param ExerciseData c);
 
 }
