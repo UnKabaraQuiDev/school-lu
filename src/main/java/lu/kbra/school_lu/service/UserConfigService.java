@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import lu.kbra.pclib.db.impl.DeferredDBTransaction;
-import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.db.data.UserConfigData;
+import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.UserConfigTable;
 
 import lombok.RequiredArgsConstructor;
@@ -20,20 +20,20 @@ public class UserConfigService {
 
 	private final UserConfigTable userConfigTable;
 
-	public Map<String, String> getConfig(final UserId id) {
-		return this.userConfigTable.byUserId(id.id()).stream().collect(Collectors.toMap(UserConfigData::getKey, UserConfigData::getValue));
+	public Map<String, String> getConfig(final UserData userData) {
+		return this.userConfigTable.byUser(userData).stream().collect(Collectors.toMap(UserConfigData::getKey, UserConfigData::getValue));
 	}
 
-	public String getConfig(final UserId id, final String key) {
-		final UserConfigData data = this.userConfigTable.byUserIdAndKey(id.id(), key);
+	public String getConfig(final UserData userData, final String key) {
+		final UserConfigData data = this.userConfigTable.byUserAndKey(userData, key);
 		return data == null ? null : data.getValue();
 	}
 
-	public void setConfig(final UserId id, final Map<String, String> map) {
+	public void setConfig(final UserData userData, final Map<String, String> map) {
 		try (DeferredDBTransaction transaction = this.userConfigTable.getDatabase().createTransaction()) {
 			final UserConfigTable userConfigProxy = transaction.use(this.userConfigTable);
 
-			final List<UserConfigData> datas = userConfigProxy.byUserId(id.id());
+			final List<UserConfigData> datas = userConfigProxy.byUser(userData);
 			final List<UserConfigData> toKeep = new ArrayList<>();
 			datas.removeIf(c -> {
 				if (map.containsKey(c.getKey())) {
@@ -51,8 +51,8 @@ public class UserConfigService {
 		}
 	}
 
-	public void setConfig(final UserId id, final String key, final String value) {
-		final UserConfigData data = this.userConfigTable.byUserIdAndKey(id.id(), key);
+	public void setConfig(final UserData userData, final String key, final String value) {
+		final UserConfigData data = this.userConfigTable.byUserAndKey(userData, key);
 		if (data != null) {
 			if (value == null) {
 				this.userConfigTable.delete(data);
@@ -61,7 +61,7 @@ public class UserConfigService {
 				this.userConfigTable.update(data);
 			}
 		} else {
-			this.userConfigTable.insert(new UserConfigData(id.id(), key, value));
+			this.userConfigTable.insert(new UserConfigData(userData.getId(), key, value));
 		}
 	}
 

@@ -15,7 +15,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,15 +24,16 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
 import lu.kbra.pclib.db.exception.TooManyMatchingRowsException;
+import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
-import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
 import lu.kbra.school_lu.db.data.ExamData;
 import lu.kbra.school_lu.db.data.SectionData;
 import lu.kbra.school_lu.db.data.SubjectData;
+import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
 import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.SectionTable;
@@ -67,12 +67,12 @@ public class SyncExamsController {
 
 	@PostMapping("/exam-db/exams/update-index")
 	public SseEmitter updateIndex(
-			@AuthenticationPrincipal final UserId userId,
+			@CurrentUser final UserData userData,
 			@RequestParam final MultipartFile file,
 			@RequestParam final boolean allowSectionCreation,
 			@RequestParam final boolean allowSubjectCreation) {
 
-		this.userPermissionService.requireAllPermissions(userId,
+		this.userPermissionService.requireAllPermissions(userData,
 				UserPermissionType.MANAGE_EXAM,
 				UserPermissionType.MANAGE_SECTION,
 				UserPermissionType.MANAGE_SUBJECT);

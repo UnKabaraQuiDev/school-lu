@@ -12,7 +12,6 @@ import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.Version;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
-import lu.kbra.school_lu.data.UserId;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -22,8 +21,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class UserData implements DatabaseEntry {
-
-	private static final long serialVersionUID = 8313488165762870588L;
 
 	@Column
 	@PrimaryKey
@@ -81,10 +78,6 @@ public class UserData implements DatabaseEntry {
 	@Override
 	public UserData clone() {
 		return PCUtils.safeClone(super::clone);
-	}
-
-	public UserId toUserId() {
-		return new UserId(this.id);
 	}
 
 }

@@ -21,8 +21,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import lu.kbra.school_lu.data.UserId;
-import lu.kbra.school_lu.service.UserAuthenticationProvider;
 import lu.kbra.school_lu.service.UserService;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,14 +35,12 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(
 			final HttpSecurity http,
 			@Qualifier("corsConfigurationSource") final CorsConfigurationSource source,
-			final UserAuthenticationProvider authenticationProvider,
 			final UserService userService,
 			@Value("${app.security.remember-me.sk}") final String rememberMeSk)
 			throws Exception {
 		return http.cors(cors -> cors.configurationSource(source))
 				.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-				.authenticationProvider(authenticationProvider)
 				.authorizeHttpRequests(auth -> auth.requestMatchers("/login", "/register", "/logout", "/error", "/csrf", "/p/**")
 						.permitAll()
 						.anyRequest()
@@ -55,7 +51,7 @@ public class SecurityConfig {
 							userService.updateLastLogin(authentication);
 							response.setStatus(HttpServletResponse.SC_OK);
 							SecurityConfig.log.info("User: {} logged in from {} [{}]",
-									((UserId) authentication.getPrincipal()).id(),
+									authentication.getName(),
 									request.getRemoteAddr(),
 									request.getRemoteHost());
 						})
@@ -63,7 +59,7 @@ public class SecurityConfig {
 				.logout(logout -> logout.logoutSuccessHandler((request, response, authentication) -> {
 					if (authentication != null) {
 						SecurityConfig.log.info("User: {} logged out from {} [{}]",
-								((UserId) authentication.getPrincipal()).id(),
+								authentication.getName(),
 								request.getRemoteAddr(),
 								request.getRemoteHost());
 					}
