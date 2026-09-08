@@ -467,6 +467,19 @@ def discover_exams():
 
     return exams
 
+def get_exam_name(folder: Path) -> str:
+    """Return the Name decoded from the associated PDF filename."""
+    pdf = get_source_pdf(folder)
+
+    if pdf is None:
+        return ""
+
+    parsed = parse_exam_filename(pdf)
+
+    if parsed is None:
+        return ""
+
+    return parsed["Name"]
 
 # ============================================================
 # Main
@@ -491,6 +504,7 @@ def main():
                 "Year",
                 "Subtype",
                 "Season",
+                "Name",
                 "Source",
                 "Exercise Index",
                 "Qualifier",
@@ -583,6 +597,7 @@ def main():
 
             for document_type, folder in sorted(files.items()):
 
+                exam_name = get_exam_name(folder)
                 index_path = folder / "index.csv"
 
                 if not index_path.exists():
@@ -717,6 +732,7 @@ def main():
                                 year,
                                 subtype,
                                 season,
+                                exam_name,
                                 source,
                                 exercise_index,
                                 qualifier,
