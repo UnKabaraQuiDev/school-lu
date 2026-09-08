@@ -1415,6 +1415,9 @@ def run_headless(
         )
         return 0
 
+    for job in jobs:
+        print(f"Will do: {job[0]}")
+
     if max_workers is None:
         max_workers = 1
 
