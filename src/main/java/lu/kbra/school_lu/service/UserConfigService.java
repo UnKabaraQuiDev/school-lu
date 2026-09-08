@@ -24,6 +24,11 @@ public class UserConfigService {
 		return this.userConfigTable.byUserId(id.id()).stream().collect(Collectors.toMap(UserConfigData::getKey, UserConfigData::getValue));
 	}
 
+	public String getConfig(final UserId id, final String key) {
+		final UserConfigData data = this.userConfigTable.byUserIdAndKey(id.id(), key);
+		return data == null ? null : data.getValue();
+	}
+
 	public void setConfig(final UserId id, final Map<String, String> map) {
 		try (DeferredDBTransaction transaction = this.userConfigTable.getDatabase().createTransaction()) {
 			final UserConfigTable userConfigProxy = transaction.use(this.userConfigTable);
@@ -43,6 +48,20 @@ public class UserConfigService {
 			userConfigProxy.updateAll(toKeep);
 
 			transaction.commit();
+		}
+	}
+
+	public void setConfig(final UserId id, final String key, final String value) {
+		final UserConfigData data = this.userConfigTable.byUserIdAndKey(id.id(), key);
+		if (data != null) {
+			if (value == null) {
+				this.userConfigTable.delete(data);
+			} else {
+				data.setValue(value);
+				this.userConfigTable.update(data);
+			}
+		} else {
+			this.userConfigTable.insert(new UserConfigData(id.id(), key, value));
 		}
 	}
 

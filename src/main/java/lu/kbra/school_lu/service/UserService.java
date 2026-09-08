@@ -4,10 +4,14 @@ import java.time.Instant;
 import java.util.Locale;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import lu.kbra.school_lu.data.UserAuthentication;
+import lu.kbra.school_lu.data.UserDetailsImpl;
 import lu.kbra.school_lu.data.UserId;
 import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.UserTable;
@@ -18,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserDetailsService {
 
 	private final UserTable userTable;
 	private final PasswordEncoder passwordEncoder;
@@ -65,6 +69,11 @@ public class UserService {
 		user.setLastLogin(Instant.now());
 
 		this.userTable.updateAndReload(user);
+	}
+
+	@Override
+	public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
+		return new UserDetailsImpl(this.userTable.byUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found")));
 	}
 
 }

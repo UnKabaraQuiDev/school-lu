@@ -23,6 +23,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserData implements DatabaseEntry {
 
+	private static final long serialVersionUID = 8313488165762870588L;
+
 	@Column
 	@PrimaryKey
 	@AutoIncrement
