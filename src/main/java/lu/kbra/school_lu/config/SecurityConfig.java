@@ -38,7 +38,8 @@ public class SecurityConfig {
 			final HttpSecurity http,
 			@Qualifier("corsConfigurationSource") final CorsConfigurationSource source,
 			final UserAuthenticationProvider authenticationProvider,
-			final UserService userService)
+			final UserService userService,
+			@Value("${app.security.remember-me.sk}") final String rememberMeSk)
 			throws Exception {
 		return http.cors(cors -> cors.configurationSource(source))
 				.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -69,6 +70,9 @@ public class SecurityConfig {
 
 					response.setStatus(HttpServletResponse.SC_OK);
 				}).clearAuthentication(true))
+				.rememberMe(remember -> remember.userDetailsService(userService)
+						.tokenValiditySeconds(60 * 60 * 24 * 30) // 30 days
+						.key(rememberMeSk))
 				.build();
 	}
 
