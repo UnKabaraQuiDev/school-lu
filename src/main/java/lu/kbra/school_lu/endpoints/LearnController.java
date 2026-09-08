@@ -22,6 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
@@ -32,6 +37,7 @@ import lu.kbra.school_lu.db.data.ExerciseData;
 import lu.kbra.school_lu.db.data.SubjectData;
 import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
+import lu.kbra.school_lu.db.table.ExamPartTable;
 import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.ExerciseAttachmentTable;
 import lu.kbra.school_lu.db.table.ExerciseTable;
@@ -43,12 +49,6 @@ import lu.kbra.school_lu.db.table.TagTable.TagProp;
 import lu.kbra.school_lu.service.UserConfigService;
 import lu.kbra.school_lu.service.UserService;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequiredArgsConstructor
 public class LearnController {
@@ -59,6 +59,7 @@ public class LearnController {
 	private final SectionTable sectionTable;
 	private final SubjectTable subjectTable;
 	private final ExamTable examTable;
+	private final ExamPartTable examPartTable;
 	private final ExamAttachmentTable examAttachmentTable;
 	private final ExerciseTable exerciseTable;
 	private final ExerciseAttachmentTable exerciseAttachmentTable;
@@ -159,7 +160,7 @@ public class LearnController {
 			final ExamData examData = this.examTable.byExercise(c);
 			final String subjectName = this.subjectTable.nameByExam(examData);
 			final String sectionName = this.sectionTable.nameByExam(examData);
-			final String examAttachmentName = this.examAttachmentTable.nameByExerciseAttachment(c);
+			final String examAttachmentName = this.examPartTable.nameByExercise(c);
 			final List<ExerciseAttachment> attachs = this.exerciseAttachmentTable.byExercise(c)
 					.stream()
 					.map(t -> new ExerciseAttachment(t.getQualifier(), t.getLocation()))

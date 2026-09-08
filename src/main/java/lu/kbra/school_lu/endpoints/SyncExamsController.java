@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -24,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
 import lu.kbra.pclib.db.exception.TooManyMatchingRowsException;
+import lu.kbra.pclib.db.impl.DeferredDBTransaction;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
@@ -31,10 +31,14 @@ import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
 import lu.kbra.school_lu.db.data.ExamData;
+import lu.kbra.school_lu.db.data.ExamPartData;
+import lu.kbra.school_lu.db.data.ExamPartExamData;
 import lu.kbra.school_lu.db.data.SectionData;
 import lu.kbra.school_lu.db.data.SubjectData;
 import lu.kbra.school_lu.db.data.UserData;
 import lu.kbra.school_lu.db.table.ExamAttachmentTable;
+import lu.kbra.school_lu.db.table.ExamPartExamTable;
+import lu.kbra.school_lu.db.table.ExamPartTable;
 import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.SectionTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
@@ -46,6 +50,8 @@ public class SyncExamsController {
 	private final SectionTable sectionTable;
 	private final SubjectTable subjectTable;
 	private final ExamTable examTable;
+	private final ExamPartExamTable examPartExamTable;
+	private final ExamPartTable examPartTable;
 	private final ExamAttachmentTable examAttachmentTable;
 	private final UserPermissionService userPermissionService;
 	private final Executor executor;
@@ -54,12 +60,16 @@ public class SyncExamsController {
 			final SectionTable sectionTable,
 			final SubjectTable subjectTable,
 			final ExamTable examTable,
+			final ExamPartExamTable examPartExamTable,
+			final ExamPartTable examPartTable,
 			final ExamAttachmentTable examAttachmentTable,
 			final UserPermissionService userPermissionService,
 			@Qualifier("applicationTaskExecutor") final Executor executor) {
 		this.sectionTable = sectionTable;
 		this.subjectTable = subjectTable;
 		this.examTable = examTable;
+		this.examPartExamTable = examPartExamTable;
+		this.examPartTable = examPartTable;
 		this.examAttachmentTable = examAttachmentTable;
 		this.userPermissionService = userPermissionService;
 		this.executor = executor;
@@ -99,7 +109,7 @@ public class SyncExamsController {
 		}
 
 		this.executor.execute(() -> {
-			try {
+			try (DeferredDBTransaction transaction = this.examTable.getDatabase().createTransaction()) {
 				final CSVParser parser = CSVParser.parse(file.getInputStream(),
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
@@ -130,6 +140,13 @@ public class SyncExamsController {
 
 				final Map<String, SectionData> sectionDatas = new HashMap<>();
 				final Map<String, Map<String, SubjectData>> subjectDatas = new HashMap<>();
+
+				final SectionTable sectionTable = transaction.use(this.sectionTable);
+				final SubjectTable subjectTable = transaction.use(this.subjectTable);
+				final ExamTable examTable = transaction.use(this.examTable);
+				final ExamPartExamTable examPartExamTable = transaction.use(this.examPartExamTable);
+				final ExamPartTable examPartTable = transaction.use(this.examPartTable);
+				final ExamAttachmentTable examAttachmentTable = transaction.use(this.examAttachmentTable);
 
 				int index = 0;
 				for (final CSVRecord record : records) {
@@ -181,11 +198,13 @@ public class SyncExamsController {
 					final SectionData sectionData;
 					final SubjectData subjectData;
 					final ExamData examData;
+					ExamPartData examPartData;
+					final ExamAttachmentData examAttachmentData;
 
 					try {
 						sectionData = sectionDatas.computeIfAbsent(section,
-								k -> allowSectionCreation ? this.sectionTable.loadUniqueIfExistsElseInsert(new SectionData(k))
-										: this.sectionTable.loadUnique(new SectionData(k)));
+								k -> allowSectionCreation ? sectionTable.loadUniqueIfExistsElseInsert(new SectionData(k))
+										: sectionTable.loadUnique(new SectionData(k)));
 					} catch (final NoMatchingRowException e) {
 						emitter.send(SseEmitter.event().name("warning").data("Section not found: " + section));
 						continue;
@@ -195,17 +214,14 @@ public class SyncExamsController {
 						subjectData = subjectDatas.computeIfAbsent(section, k -> new HashMap<>())
 								.computeIfAbsent(subject,
 										k -> allowSubjectCreation
-												? this.subjectTable.loadUniqueIfExistsElseInsert(new SubjectData(sectionData.getId(), k))
-												: this.subjectTable.loadUnique(new SubjectData(sectionData.getId(), k)));
+												? subjectTable.loadUniqueIfExistsElseInsert(new SubjectData(sectionData.getId(), k))
+												: subjectTable.loadUnique(new SubjectData(sectionData.getId(), k)));
 					} catch (final NoMatchingRowException e) {
 						emitter.send(SseEmitter.event().name("warning").data("Subject not found: " + subject));
 						continue;
 					}
 
-					examData = this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype));
-
-					final ExamAttachmentData statementData = this.examAttachmentTable
-							.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examData.getId(), qualifier, name, attachement));
+					examData = examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype));
 
 					if (source != null) {
 						final String[] sourceTokens = source.split(":");
@@ -232,48 +248,56 @@ public class SyncExamsController {
 						default -> null;
 						};
 
-						final ExamData parentData = new ExamData(subjectDatas.get(sourceSection).get(sourceSubject).getId(),
+						final ExamData parentExamData = new ExamData(subjectDatas.get(sourceSection).get(sourceSubject).getId(),
 								sourceYear,
 								sourceSeason,
 								sourceSubtype);
 						try {
-							examTable.loadUnique(parentData);
-						} catch (NoMatchingRowException e) {
+							examTable.loadUnique(parentExamData);
+						} catch (final NoMatchingRowException e) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam not found: " + source));
 							continue;
 						}
 
-						final ExamAttachmentData parentAttachmentData = new ExamAttachmentData(parentData.getId(),
-								sourceQualifier,
-								sourceName);
 						try {
-							examAttachmentTable.loadUnique(parentAttachmentData);
-						} catch (final TooManyMatchingRowsException e) {
-							emitter.send(SseEmitter.event()
-									.name("warning")
-									.data("Exam attachment duplicate: " + source + " matching:\n"
-											+ examAttachmentTable
-													.loadByUnique(new ExamAttachmentData(parentData.getId(), sourceQualifier, sourceName))
-													.stream()
-													.map(c -> " * " + c.toString())
-													.collect(Collectors.joining("\n"))));
-							continue;
-						} catch (NoMatchingRowException e) {
+							examAttachmentData = examAttachmentTable
+									.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
+						} catch (final NoMatchingRowException e) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
 							continue;
 						}
 
-						statementData.setParentId(parentAttachmentData.getId());
-						examAttachmentTable.update(statementData);
+						try {
+							examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
+						} catch (final NoMatchingRowException e) {
+							examPartData = examPartTable.insert(new ExamPartData(name));
+						}
+
+						examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), parentExamData.getId()));
+					} else {
+						examAttachmentData = examAttachmentTable
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(null, qualifier, attachement));
+
+						try {
+							examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
+						} catch (final NoMatchingRowException e) {
+							examPartData = examPartTable.insert(new ExamPartData(name));
+						}
 					}
+
+					examAttachmentData.setExamPartId(examPartData.getId());
+					examAttachmentTable.update(examAttachmentData);
+
+					examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), examData.getId()));
 
 					emitter.send(SseEmitter.event().name("progress").data(index + "/" + rowCount));
 				}
 
+				transaction.commit();
 				emitter.send(SseEmitter.event().name("complete").data("CSV uploaded successfully"));
 
 				emitter.complete();
-			} catch (final IOException e) {
+			} catch (final Exception e) {
 				try {
 					emitter.send(SseEmitter.event().name("error").data("Error reading CSV"));
 				} catch (final IOException ignored) {
