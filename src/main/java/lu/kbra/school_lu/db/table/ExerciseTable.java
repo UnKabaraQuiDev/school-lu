@@ -38,7 +38,11 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	public abstract List<ExerciseData> allWithSolution();
 
 	@Query(
-			tables = { @Table(typeName = ExamTable.class), @Table(typeName = SubjectTable.class) },
+			tables = {
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
+					@Table(typeName = SubjectTable.class) },
 			condition = ExerciseTable.hasSolutionAndStatement,
 			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
 	)
@@ -46,9 +50,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 	@Query(
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT)
@@ -63,9 +67,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 	@Query(
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT)
@@ -81,9 +85,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 	@Query(
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT)
@@ -98,9 +102,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 	@Query(
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
@@ -118,9 +122,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 	@Query(
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
@@ -140,9 +144,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT) },
@@ -155,9 +159,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT) }
@@ -169,9 +173,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
@@ -188,9 +192,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
 			tables = {
-					@Table(typeName = ExerciseAttachmentTable.class),
-					@Table(typeName = ExamAttachmentTable.class),
-					@Table(typeName = ExamTable.class, on = "{M:ExamAttachmentTable:examId} = {M:ExamTable:id}"),
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
