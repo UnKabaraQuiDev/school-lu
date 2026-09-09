@@ -46,5 +46,11 @@
     "tags.delete": "Delete",
     "tags.name": "Name",
     "tags.options": "Options",
-    "tags.title": "Edit tags"
+    "tags.title": "Edit tags",
+    "exercises.exercise": "Exercise",
+    "exercises.next_exercise": "⬇",
+    "exercises.next_image": "➡",
+    "exercises.previous_exercise": "⬆",
+    "exercises.previous_image": "⬅",
+    "exercises.title": "Exam content"
 }

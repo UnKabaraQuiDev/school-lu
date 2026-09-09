@@ -27,6 +27,34 @@
             }
         };
     </script>
+    <style>
+        .year-range {
+            pointer-events: none;
+            appearance: none;
+            background: transparent;
+        }
+
+        .year-range::-webkit-slider-thumb {
+            pointer-events: auto;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 9999px;
+            background: white;
+            border: 2px solid #2563eb;
+            cursor: pointer;
+        }
+
+        .year-range::-moz-range-thumb {
+            pointer-events: auto;
+            width: 18px;
+            height: 18px;
+            border-radius: 9999px;
+            background: white;
+            border: 2px solid #2563eb;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body class="min-h-screen bg-slate-100 text-slate-900">
@@ -182,6 +210,42 @@
                     </div>
                 </section>
 
+                <!-- Year range -->
+                <section class="mt-8">
+                    <div class="mb-3">
+                        <h2 class="text-lg font-semibold" data-i18n="settings.year_range">
+                            Year range
+                        </h2>
+
+                        <p class="text-sm text-slate-500" data-i18n="settings.year_range_description">
+                            Select the years you want to practice.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <input id="year-from" type="number" min="1995" max="2099"
+                            class="w-24 rounded-lg border border-slate-300 px-3 py-2 text-center outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                            aria-label="Start year">
+
+                        <div class="relative h-8 flex-1">
+                            <div class="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200">
+                            </div>
+
+                            <div id="year-range-selected"
+                                class="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-blue-600"></div>
+
+                            <input id="year-range-min" type="range" min="1995" max="2099" step="1"
+                                class="year-range absolute inset-0 w-full">
+
+                            <input id="year-range-max" type="range" min="1995" max="2099" step="1"
+                                class="year-range absolute inset-0 w-full">
+                        </div>
+
+                        <input id="year-to" type="number" min="1995" max="2099"
+                            class="w-24 rounded-lg border border-slate-300 px-3 py-2 text-center outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                            aria-label="End year">
+                    </div>
+                </section>
 
                 <!-- Start -->
                 <div class="mt-6 flex justify-end">
@@ -352,9 +416,9 @@
 
 
     <!-- External scripts -->
+    <script src="/js/year-slider.js"></script>
     <script src="/js/image-viewer.js" defer></script>
     <script src="/js/settings.js" defer></script>
-
 </body>
 
 </html>

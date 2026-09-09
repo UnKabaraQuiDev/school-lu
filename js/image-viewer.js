@@ -99,6 +99,7 @@
         );
 
         resetZoom();
+        reloadLanguage();
     }
 
 
@@ -238,7 +239,7 @@
     }
 
 
-    function bindExercise(exercise, exerciseIndex) {
+    function bindExercise(exercise, exerciseIndex, openFirst = false) {
         const images = exercise.querySelectorAll(
             ".exercise-image"
         );
@@ -329,6 +330,10 @@
 
 
         updateImageNavigation();
+
+        if (openFirst && images.length > 0) {
+            openViewer(exerciseIndex, 0);
+        }
     }
 
 

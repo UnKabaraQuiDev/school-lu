@@ -9,7 +9,10 @@
     save: 'learn/save',
     next: 'learn/next',
     subjects: 'subjects/tree',
-    tags: 'tags/list'
+    tags: 'tags/list',
+    failed: 'learn/failed',
+    success: 'learn/success',
+    skip: 'learn/skip',
   }
 
   /*
@@ -47,6 +50,7 @@
     }
     return response.json()
   }
+  
   async function putJSON (path, body) {
     const response = await fetch(apiUrl(path), {
       method: 'PUT',
@@ -61,7 +65,6 @@
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText}`)
     }
-    return response.json()
   }
 
   /* =========================================================
@@ -442,11 +445,13 @@
 
   function getNextRequestBody () {
     const settings = readSettingsFromDOM()
+    const yearRange = getYearRange();
     return {
       withSolutionOnly: Boolean(settings.withSolutionOnly),
       subjects: getSelectedSubjectsBySection(),
       requiredTags: Array.from(state.selectedTags),
-      excludeSuccess: Boolean(settings.excludeSuccess)
+      excludeSuccess: Boolean(settings.excludeSuccess),
+      yearRange: {from: yearRange[0], to: yearRange[1]}
     }
   }
 
@@ -625,9 +630,8 @@
 
     const imageContainer = fragment.querySelector('.exercise-images > div')
 
-    const attachments = exercise.attachments
-
-    attachments.forEach(attachment => {
+    console.log(exercise.attachments);
+    exercise.attachments.forEach(attachment => {
       const imageButton = document.createElement('button')
       imageButton.type = 'button'
       imageButton.className =
@@ -699,7 +703,7 @@
     renderExerciseTags(exercise.tags)
 
     if (window.LearnImageViewer) {
-      window.LearnImageViewer.bindExercise(inserted, index)
+      window.LearnImageViewer.bindExercise(inserted, index, true)
     }
 
     /*
@@ -710,6 +714,12 @@
       while (exercisesContainer.children.length > 1) {
         exercisesContainer.firstElementChild.remove()
       }
+    }
+
+    const button = exercisesContainer.querySelector(":scope > button.exercise-image");
+
+    if (button) {
+        button.click();
     }
   }
 
@@ -773,6 +783,8 @@
        */
       renderSubjects()
       renderTags()
+
+      setYearRange(data.yearRange.from, data.yearRange.to);
     } catch (error) {
       console.error('Could not restore learning session:', error)
     }
@@ -834,14 +846,13 @@
        * the current exercise entirely from the session.
        */
       if (exercise?.id != null) {
-        body.exerciseId = exercise.id
+        putJSON(API[result], exercise.id)
       }
+
       putJSON(API.save, body)
       const data = await postJSON(API.next, body)
 
-      const nextExercise = getNextExercise(data)
-
-      showExercise(nextExercise, true)
+      showExercise(data[0], true)
     } catch (error) {
       console.error('Could not load next exercise:', error)
       showError('Could not load the next exercise.')
