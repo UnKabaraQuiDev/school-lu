@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import org.springframework.http.CacheControl;
@@ -23,91 +24,81 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lu.kbra.school_lu.data.CurrentUser;
-import lu.kbra.school_lu.data.ExamAttachmentType;
-import lu.kbra.school_lu.data.ExamSeason;
-import lu.kbra.school_lu.data.ExamType;
 import lu.kbra.school_lu.data.ExerciseStatus;
 import lu.kbra.school_lu.db.data.ExamData;
 import lu.kbra.school_lu.db.data.ExerciseData;
 import lu.kbra.school_lu.db.data.SubjectData;
 import lu.kbra.school_lu.db.data.UserData;
-import lu.kbra.school_lu.db.table.ExamAttachmentTable;
+import lu.kbra.school_lu.db.data.UserExerciseData;
 import lu.kbra.school_lu.db.table.ExamPartTable;
 import lu.kbra.school_lu.db.table.ExamTable;
 import lu.kbra.school_lu.db.table.ExerciseAttachmentTable;
 import lu.kbra.school_lu.db.table.ExerciseTable;
-import lu.kbra.school_lu.db.table.ExerciseTagTable;
 import lu.kbra.school_lu.db.table.SectionTable;
 import lu.kbra.school_lu.db.table.SubjectTable;
 import lu.kbra.school_lu.db.table.TagTable;
 import lu.kbra.school_lu.db.table.TagTable.TagProp;
+import lu.kbra.school_lu.db.table.UserExerciseTable;
+import lu.kbra.school_lu.endpoints.ReturnTypes.ErrorBody;
+import lu.kbra.school_lu.endpoints.ReturnTypes.Exam;
+import lu.kbra.school_lu.endpoints.ReturnTypes.Exercise;
+import lu.kbra.school_lu.endpoints.ReturnTypes.ExerciseAttachment;
+import lu.kbra.school_lu.endpoints.ReturnTypes.NextExercise;
+import lu.kbra.school_lu.endpoints.ReturnTypes.Tag;
+import lu.kbra.school_lu.endpoints.ReturnTypes.TagBottleneck;
+import lu.kbra.school_lu.endpoints.ReturnTypes.YearRange;
 import lu.kbra.school_lu.service.UserConfigService;
-import lu.kbra.school_lu.service.UserService;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 public class LearnController {
 
-	private static final int LIMIT_EXERCISE_CHOICE = 5;
+	private static final int LIMIT_EXERCISE_CHOICE = 1;
 	private static final String LEARN_SAVED_STATE = "LEARN_SAVED_STATE";
 
 	private final SectionTable sectionTable;
 	private final SubjectTable subjectTable;
 	private final ExamTable examTable;
 	private final ExamPartTable examPartTable;
-	private final ExamAttachmentTable examAttachmentTable;
 	private final ExerciseTable exerciseTable;
 	private final ExerciseAttachmentTable exerciseAttachmentTable;
-	private final ExerciseTagTable exerciseTagTable;
 	private final TagTable tagTable;
+	private final UserExerciseTable userExerciseTable;
 
-	private final UserService userService;
 	private final UserConfigService userConfigService;
 
 	private final ObjectMapper objectMapper;
 
-	public record NextRequest(
-			boolean withSolutionOnly,
-			@NotEmpty Map<@NotBlank @NotNull String, @NotEmpty Set<@NotBlank @NotNull String>> subjects,
-			Set<@NotBlank @NotNull String> requiredTags,
-			boolean excludeSuccess) {
+	@PutMapping("/learn/skip")
+	public ResponseEntity<?> skip(@CurrentUser final UserData userData, @RequestBody @Valid @Positive final int exerciseId) {
+		return this.setStatus(userData, exerciseId, ExerciseStatus.SKIP);
 	}
 
-	public record Exam(String section, String subject, int year, ExamSeason season, ExamType subtype, String name) {
+	@PutMapping("/learn/success")
+	public ResponseEntity<?> success(@CurrentUser final UserData userData, @RequestBody @Valid @Positive final int exerciseId) {
+		return this.setStatus(userData, exerciseId, ExerciseStatus.SUCCESS);
 	}
 
-	public record Exercise(Exam exam, long id, int exerciseIndex, List<ExerciseAttachment> attachments, List<Tag> tags) {
-	}
-
-	public record ExerciseAttachment(ExamAttachmentType qualifier, String location) {
-	}
-
-	public record Tag(int color, String name) {
-	}
-
-	public record ErrorBody(String message, Object obj) {
-	}
-
-	public record TagBottleneck(String name, int count, int negativeCount, double negativePercentage) {
+	@PutMapping("/learn/failed")
+	public ResponseEntity<?> failed(@CurrentUser final UserData userData, @RequestBody @Valid @Positive final int exerciseId) {
+		return this.setStatus(userData, exerciseId, ExerciseStatus.FAILED);
 	}
 
 	@PutMapping("/learn/save")
-	public void save(@CurrentUser final UserData userData, @RequestBody final NextRequest request) throws JsonProcessingException {
+	public void save(@CurrentUser final UserData userData, @RequestBody final NextExercise request) throws JsonProcessingException {
 		this.userConfigService.setConfig(userData, LearnController.LEARN_SAVED_STATE, this.objectMapper.writeValueAsString(request));
 	}
 
 	@GetMapping("/learn/restore")
-	public ResponseEntity<NextRequest> restore(@CurrentUser final UserData userData) throws JsonProcessingException {
+	public ResponseEntity<NextExercise> restore(@CurrentUser final UserData userData) throws JsonProcessingException {
 		final String content = this.userConfigService.getConfig(userData, LearnController.LEARN_SAVED_STATE);
-		final NextRequest result;
+		final NextExercise result;
 		if (content != null) {
-			result = this.objectMapper.readValue(content, NextRequest.class);
+			result = this.objectMapper.readValue(content, NextExercise.class);
 		} else {
 			result = null;
 		}
@@ -115,7 +106,7 @@ public class LearnController {
 	}
 
 	@PostMapping("/learn/next")
-	public ResponseEntity<?> next(@CurrentUser final UserData userData, @RequestBody @Valid final NextRequest request) {
+	public ResponseEntity<?> next(@CurrentUser final UserData userData, @RequestBody @Valid final NextExercise request) {
 		final Set<SubjectData> subjects = request.subjects()
 				.entrySet()
 				.stream()
@@ -123,38 +114,33 @@ public class LearnController {
 				.collect(Collectors.toSet());
 
 		if (subjects.isEmpty()) {
-			// TODO: better error
-			return null;
+			return ResponseEntity.badRequest().body(new ErrorBody("Subjects not found.", request.subjects()));
 		}
+
+		final YearRange yearRange = request.yearRange() == null ? new YearRange(0, 3000)
+				: new YearRange(Math.min(request.yearRange().from(), request.yearRange().to()),
+						Math.max(request.yearRange().from(), request.yearRange().to()));
 
 		final List<ExerciseData> exercises;
 		if (request.withSolutionOnly()) {
-			exercises = request.excludeSuccess()
-					? this.exerciseTable.withSolutionAnySubjectAllTagsNotByStatus(subjects,
-							request.requiredTags(),
-							userData,
-							ExerciseStatus.SUCCESS,
-							LearnController.LIMIT_EXERCISE_CHOICE)
-					: this.exerciseTable.withSolutionAnySubjectAllTagsNotByStatus(subjects,
-							request.requiredTags(),
-							userData,
-							null,
-							LearnController.LIMIT_EXERCISE_CHOICE);
+			exercises = this.exerciseTable.withSolutionAnySubjectAllTagsNotStatus(subjects,
+					request.requiredTags(),
+					userData,
+					request.excludeSuccess() ? ExerciseStatus.SUCCESS : null,
+					yearRange.from(),
+					yearRange.to(),
+					LearnController.LIMIT_EXERCISE_CHOICE);
 		} else {
-			exercises = request.excludeSuccess()
-					? this.exerciseTable.byAnySubjectAllTagsNotByStatus(subjects,
-							request.requiredTags(),
-							userData,
-							ExerciseStatus.SUCCESS,
-							LearnController.LIMIT_EXERCISE_CHOICE)
-					: this.exerciseTable.byAnySubjectAllTagsNotByStatus(subjects,
-							request.requiredTags(),
-							userData,
-							null,
-							LearnController.LIMIT_EXERCISE_CHOICE);
+			exercises = this.exerciseTable.byAnySubjectAllTagsNotStatus(subjects,
+					request.requiredTags(),
+					userData,
+					request.excludeSuccess() ? ExerciseStatus.SUCCESS : null,
+					yearRange.from(),
+					yearRange.to(),
+					LearnController.LIMIT_EXERCISE_CHOICE);
 		}
 		if (exercises.isEmpty()) {
-			return this.whyNoResults(userData, subjects, request);
+			return this.whyNoResults(userData, subjects, yearRange, request);
 		}
 
 		final List<Exercise> response = exercises.stream().map(c -> {
@@ -165,6 +151,7 @@ public class LearnController {
 			final List<ExerciseAttachment> attachs = this.exerciseAttachmentTable.byExercise(c)
 					.stream()
 					.map(t -> new ExerciseAttachment(t.getQualifier(), t.getLocation()))
+					.sorted(Comparator.comparingInt(t -> t.qualifier().ordinal()))
 					.toList();
 			final List<Tag> tags = this.tagTable.byExercise(c).stream().map(t -> new Tag(t.getColor(), t.getName())).toList();
 			return new Exercise(
@@ -178,7 +165,8 @@ public class LearnController {
 		return ResponseEntity.ok(response);
 	}
 
-	private ResponseEntity<?> whyNoResults(final UserData userData, final Set<SubjectData> subjects, final NextRequest request) {
+	private ResponseEntity<?>
+			whyNoResults(final UserData userData, final Set<SubjectData> subjects, final YearRange yearRange, final NextExercise request) {
 		if (!request.requiredTags().isEmpty()) {
 			final List<String> foundTags = this.tagTable.byName(request.requiredTags());
 			final Set<String> requiredTags = new HashSet<>(request.requiredTags());
@@ -186,6 +174,20 @@ public class LearnController {
 			if (!requiredTags.isEmpty()) {
 				return ResponseEntity.badRequest().body(new ErrorBody("Invalid tags.", requiredTags));
 			}
+		}
+
+		if (request.requiredTags().isEmpty()) {
+			return ResponseEntity.badRequest()
+					.body(new ErrorBody("Year range probably too restrictive.",
+							request.withSolutionOnly()
+									? exerciseTable.countWithSolutionAnySubjectAllTagsNotStatusByYear(subjects,
+											request.requiredTags(),
+											userData,
+											request.excludeSuccess() ? ExerciseStatus.SUCCESS : null)
+									: exerciseTable.countByAnySubjectAllTagsNotStatusByYear(subjects,
+											request.requiredTags(),
+											userData,
+											request.excludeSuccess() ? ExerciseStatus.SUCCESS : null)));
 		}
 
 		final List<TagProp> tagProps = this.tagTable.propByName(request.requiredTags());
@@ -196,40 +198,37 @@ public class LearnController {
 
 		final Iterator<TagProp> it = tagProps.iterator();
 
+		final ToIntFunction<Set<String>> countFor = tags -> {
+			if (request.withSolutionOnly()) {
+				return this.exerciseTable.countWithSolutionAnySubjectAllTagsNotStatus(subjects,
+						tags,
+						userData,
+						request.excludeSuccess() ? ExerciseStatus.SUCCESS : null,
+						yearRange.from(),
+						yearRange.to());
+			} else {
+				return this.exerciseTable.countByAnySubjectAllTagsNotStatus(subjects,
+						tags,
+						userData,
+						request.excludeSuccess() ? ExerciseStatus.SUCCESS : null,
+						yearRange.from(),
+						yearRange.to());
+			}
+		};
+
 		while (it.hasNext()) {
 			final String newTag = it.next().name();
 
 			usingTags.add(newTag);
 
-			final int count;
-			if (request.withSolutionOnly()) {
-				count = request.excludeSuccess()
-						? this.exerciseTable
-								.countWithSolutionAnySubjectAllTagsNotByStatus(subjects, usingTags, userData, ExerciseStatus.SUCCESS)
-						: this.exerciseTable.countWithSolutionAnySubjectAllTags(subjects, usingTags);
-			} else {
-				count = request.excludeSuccess()
-						? this.exerciseTable.countByAnySubjectAllTagsNotByStatus(subjects, usingTags, userData, ExerciseStatus.SUCCESS)
-						: this.exerciseTable.countByAnySubjectAllTags(subjects, usingTags);
-			}
+			final int count = countFor.applyAsInt(usingTags);
 
 			counts.put(newTag, count);
 		}
 
 		final List<TagBottleneck> bottlenecks = new ArrayList<>();
 
-		int previousCount;
-		if (request.withSolutionOnly()) {
-			previousCount = request.excludeSuccess() ? this.exerciseTable
-					.countWithSolutionAnySubjectAllTagsNotByStatus(subjects, Collections.EMPTY_SET, userData, ExerciseStatus.SUCCESS)
-					: this.exerciseTable.countWithSolutionAnySubjectAllTagsNotByStatus(subjects, Collections.EMPTY_SET, userData, null);
-		} else {
-			previousCount = request.excludeSuccess()
-					? this.exerciseTable
-							.countByAnySubjectAllTagsNotByStatus(subjects, Collections.EMPTY_SET, userData, ExerciseStatus.SUCCESS)
-					: this.exerciseTable.countByAnySubjectAllTagsNotByStatus(subjects, Collections.EMPTY_SET, userData, null);
-		}
-
+		int previousCount = countFor.applyAsInt(Collections.EMPTY_SET);
 		bottlenecks.add(new TagBottleneck("", previousCount, 0, 0));
 
 		for (final TagProp tag : tagProps) {
@@ -244,6 +243,14 @@ public class LearnController {
 		bottlenecks.sort(Comparator.comparing(c -> -c.count()));
 
 		return ResponseEntity.badRequest().body(new ErrorBody("Tags too restrictive.", bottlenecks));
+	}
+
+	private ResponseEntity<?> setStatus(final UserData userData, final long exerciseId, final ExerciseStatus status) {
+		if (!this.exerciseTable.exists(exerciseId)) {
+			return ResponseEntity.badRequest().body(new ErrorBody("Invalid exercise id.", exerciseId));
+		}
+		this.userExerciseTable.updateIfExistsElseInsert(new UserExerciseData(userData.getId(), exerciseId, status));
+		return ResponseEntity.accepted().build();
 	}
 
 }

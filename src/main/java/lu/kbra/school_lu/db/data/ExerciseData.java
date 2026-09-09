@@ -24,6 +24,7 @@ public class ExerciseData implements DatabaseEntry {
 	private Long id;
 
 	@Column
+	@Unique
 	@ForeignKey(table = ExamPartTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
 	private Long examPartId;
 
