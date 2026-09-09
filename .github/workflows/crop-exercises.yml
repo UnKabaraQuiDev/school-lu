@@ -87,7 +87,7 @@ jobs:
 
   export:
     name: Export exam images
-    
+
     needs: check
 
     if: >
@@ -112,6 +112,7 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v6
+        continue-on-error: true
         with:
           python-version: "3.13"
 
