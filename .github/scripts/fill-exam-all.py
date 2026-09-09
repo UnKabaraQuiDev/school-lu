@@ -129,17 +129,7 @@ def create_table(csv_file):
 
     rows = []
 
-    for exam in sorted(
-        exams.values(),
-        key=lambda item: (
-            item["Section"],
-            item["Subject"],
-            item["Year"],
-            item["Season"],
-            item["Subtype"],
-            item["Name"],
-        ),
-    ):
+    for exam in exams.values():
         section = exam["Section"]
         subject = exam["Subject"]
         year = exam["Year"]

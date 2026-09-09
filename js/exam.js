@@ -342,9 +342,9 @@ function getPointerDistance() {
 
 
 function startPan(event) {
-    if (scale <= 1) {
-        return;
-    }
+    // if (scale <= 1) {
+    //     return;
+    // }
 
     isDragging = true;
 
@@ -394,8 +394,7 @@ function endPan(event) {
 
     isDragging = false;
 
-    viewerContainer.style.cursor =
-        scale > 1 ? "grab" : "default";
+    viewerContainer.style.cursor = "grab";
 }
 
 

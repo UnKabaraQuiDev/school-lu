@@ -132,15 +132,7 @@ def create_table(rows):
 
     table_rows = []
 
-    for exam in sorted(
-        exams.values(),
-        key=lambda item: (
-            item["Year"],
-            item["Season"],
-            item["Subtype"],
-            item["Name"],
-        ),
-    ):
+    for exam in exams.values():
         year = exam["Year"]
         season = exam["Season"]
         subtype = exam["Subtype"]

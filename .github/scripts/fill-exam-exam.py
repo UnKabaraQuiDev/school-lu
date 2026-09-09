@@ -123,7 +123,7 @@ def exam_key_from_source(source: str) -> tuple[str, ...] | None:
 
     becomes:
 
-        ("CC", "MATH1", "2025", "NORMAL", "ETE")
+        ("CC", "MATH1", "2025", "NORMAL", "SUMMER")
     """
 
     source = normalize(source)
