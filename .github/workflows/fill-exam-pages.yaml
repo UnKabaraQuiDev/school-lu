@@ -33,7 +33,7 @@ jobs:
           git worktree add data main
 
       - name: Fill exam-db templates
-        run: .github/scripts/fill-exams.sh
+        run: bash .github/scripts/fill-exams.sh
 
       - name: Configure Git
         run: |
