@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 
 import lu.kbra.pclib.db.annotations.query.Param;
 import lu.kbra.pclib.db.annotations.query.Query;
-import lu.kbra.pclib.db.annotations.query.Query.Type;
 import lu.kbra.pclib.db.annotations.view.Table;
 import lu.kbra.pclib.db.base.DeferredDatabase;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
@@ -23,7 +22,13 @@ public abstract class ExamPartTable extends DeferredDatabaseTable<ExamPartData> 
 	@Query(distinct = true, retColumns = { "{M:ExamPartTable:name}" }, strategy = Query.Type.SINGLE_NULL)
 	public abstract String nameByExercise(@Param ExerciseData c);
 
-	@Query(distinct = true, tables = { @Table(typeName = ExamPartExamTable.class), @Table(typeName = ExamTable.class) }, strategy = Type.SINGLE_THROW)
+	@Query(
+			distinct = true,
+			tables = {
+					@Table(typeName = ExamAttachmentTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class) }
+	)
 	public abstract ExamPartData byAttachmentAndExam(@Param ExamAttachmentData attachment, @Param ExamData exam);
 
 }
