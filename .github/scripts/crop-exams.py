@@ -1396,6 +1396,7 @@ def export_pdf_headless(
 
 def run_headless(
     max_workers: int | None = None,
+    matcher: str | None = None,
 ) -> int:
     if not EXAMS_DIR.exists():
         print(
@@ -1405,7 +1406,11 @@ def run_headless(
         )
         return 1
 
-    jobs = find_headless_jobs()
+    jobs = [
+        (pdf_path, index_path)
+        for pdf_path, index_path in find_headless_jobs()
+        if pdf_path.match(matcher if matcher else "*")
+    ]
 
     if not jobs:
         print(
@@ -1455,7 +1460,6 @@ def run_headless(
 
             try:
                 future.result()
-
             except Exception as exc:
                 failures.append(
                     (
@@ -1471,7 +1475,6 @@ def run_headless(
                 )
                 
                 traceback.print_exc()
-                return
 
     print(
         (
@@ -6116,6 +6119,16 @@ def main() -> int:
         ),
     )
 
+    parser.add_argument(
+        "--matcher",
+        type=str,
+        default=None,
+        help=(
+            "Match only these paths "
+            "in headless mode."
+        ),
+    )
+
     args = parser.parse_args()
 
     if (
@@ -6175,6 +6188,7 @@ def main() -> int:
 
         return run_headless(
             max_workers=args.workers,
+            matcher=args.matcher,
         )
 
     app = QApplication(
