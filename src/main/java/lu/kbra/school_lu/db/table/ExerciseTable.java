@@ -2,9 +2,11 @@ package lu.kbra.school_lu.db.table;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
+import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.query.All;
 import lu.kbra.pclib.db.annotations.query.Limit;
 import lu.kbra.pclib.db.annotations.query.OrIsNull;
@@ -13,6 +15,7 @@ import lu.kbra.pclib.db.annotations.query.Query;
 import lu.kbra.pclib.db.annotations.view.OrderBy;
 import lu.kbra.pclib.db.annotations.view.Table;
 import lu.kbra.pclib.db.base.DeferredDatabase;
+import lu.kbra.pclib.db.impl.DatabaseEntry.ReadOnlyDatabaseEntry;
 import lu.kbra.pclib.db.table.DeferredDatabaseTable;
 import lu.kbra.school_lu.data.ExerciseStatus;
 import lu.kbra.school_lu.db.data.ExerciseData;
@@ -113,11 +116,13 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 			condition = hasSolutionAndStatement,
 			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
 	)
-	public abstract List<ExerciseData> withSolutionAnySubjectAllTagsNotByStatus(
+	public abstract List<ExerciseData> withSolutionAnySubjectAllTagsNotStatus(
 			@Param Collection<SubjectData> subjects,
 			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
 			@Param @OrIsNull UserData userData,
 			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status,
+			@Param(value = "{M:ExamTable:year}", comparator = ">=") int fromYear,
+			@Param(value = "{M:ExamTable:year}", comparator = "<=") int toYear,
 			@Limit int limit);
 
 	@Query(
@@ -132,11 +137,13 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
 			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
 	)
-	public abstract List<ExerciseData> byAnySubjectAllTagsNotByStatus(
+	public abstract List<ExerciseData> byAnySubjectAllTagsNotStatus(
 			@Param Collection<SubjectData> subjects,
 			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
 			@Param @OrIsNull UserData userData,
 			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status,
+			@Param(value = "{M:ExamTable:year}", comparator = ">=") int fromYear,
+			@Param(value = "{M:ExamTable:year}", comparator = "<=") int toYear,
 			@Limit int limit);
 
 	/* COUNT */
@@ -154,7 +161,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	)
 	public abstract int countWithSolutionAnySubjectAllTags(
 			@Param Collection<SubjectData> subjects,
-			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData);
+			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
+			@Param(value = "{M:ExamTable:year}", comparator = ">=") int fromYear,
+			@Param(value = "{M:ExamTable:year}", comparator = "<=") int toYear);
 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
@@ -168,7 +177,9 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	)
 	public abstract int countByAnySubjectAllTags(
 			@Param Collection<SubjectData> subjects,
-			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData);
+			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
+			@Param(value = "{M:ExamTable:year}", comparator = ">=") int fromYear,
+			@Param(value = "{M:ExamTable:year}", comparator = "<=") int toYear);
 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
@@ -183,11 +194,13 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
 			condition = hasSolutionAndStatement
 	)
-	public abstract int countWithSolutionAnySubjectAllTagsNotByStatus(
+	public abstract int countWithSolutionAnySubjectAllTagsNotStatus(
 			@Param Collection<SubjectData> subjects,
 			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
 			@Param @OrIsNull UserData userData,
-			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status);
+			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status,
+			@Param(value = "{M:ExamTable:year}", comparator = ">=") int fromYear,
+			@Param(value = "{M:ExamTable:year}", comparator = "<=") int toYear);
 
 	@Query(
 			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}" },
@@ -201,10 +214,62 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) }
 	)
-	public abstract int countByAnySubjectAllTagsNotByStatus(
+	public abstract int countByAnySubjectAllTagsNotStatus(
+			@Param Collection<SubjectData> subjects,
+			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
+			@Param @OrIsNull UserData userData,
+			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status,
+			@Param(value = "{M:ExamTable:year}", comparator = ">=") int fromYear,
+			@Param(value = "{M:ExamTable:year}", comparator = "<=") int toYear);
+
+	@Query(
+			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}", "{M:ExamTable:year} AS {Q:year}" },
+			tables = {
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
+					@Table(typeName = SubjectTable.class),
+					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
+					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
+					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
+					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
+			condition = hasSolutionAndStatement,
+			groupBy = { "{M:ExamTable:year}" }
+	)
+	public abstract List<YearCount> countWithSolutionAnySubjectAllTagsNotStatusByYear(
 			@Param Collection<SubjectData> subjects,
 			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
 			@Param @OrIsNull UserData userData,
 			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status);
+
+	@Query(
+			retColumns = { "{F:count}({M:ExerciseTable:id}) AS {Q:count}", "{M:ExamTable:year} AS {Q:year}" },
+			tables = {
+					@Table(typeName = ExamPartTable.class),
+					@Table(typeName = ExamPartExamTable.class),
+					@Table(typeName = ExamTable.class),
+					@Table(typeName = SubjectTable.class),
+					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
+					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
+					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
+					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
+			groupBy = { "{M:ExamTable:year}" }
+	)
+	public abstract List<YearCount> countByAnySubjectAllTagsNotStatusByYear(
+			@Param Collection<SubjectData> subjects,
+			@All @Param(value = "{M:TagTable:name}", ignoreNull = true) Collection<String> tagData,
+			@Param @OrIsNull UserData userData,
+			@Param(comparator = "IS DISTINCT FROM", ignoreNull = true) ExerciseStatus status);
+
+	public record YearCount(@Column int count, @Column int year) implements ReadOnlyDatabaseEntry {
+	}
+
+	public Optional<ExerciseData> byId(long exerciseId) {
+		return super.loadIfExists(new ExerciseData(exerciseId));
+	}
+
+	public boolean exists(long exerciseId) {
+		return super.exists(new ExerciseData(exerciseId));
+	}
 
 }

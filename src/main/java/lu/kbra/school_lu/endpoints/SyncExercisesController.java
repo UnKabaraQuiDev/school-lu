@@ -30,6 +30,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
 import lu.kbra.pclib.db.impl.DeferredDBTransaction;
+import lu.kbra.pclib.db.transaction.DefaultTransactionOption;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
@@ -75,18 +76,18 @@ public class SyncExercisesController {
 	private final Executor executor;
 
 	public SyncExercisesController(
-			SectionTable sectionTable,
-			SubjectTable subjectTable,
-			ExamTable examTable,
-			ExamPartExamTable examPartExamTable,
-			ExamPartTable examPartTable,
-			ExamAttachmentTable examAttachmentTable,
-			ExerciseTable exerciseTable,
-			ExerciseAttachmentTable exerciseAttachmentTable,
-			ExerciseTagTable exerciseTagTable,
-			TagTable tagTable,
-			UserPermissionService userPermissionService,
-			@Qualifier("applicationTaskExecutor") Executor executor) {
+			final SectionTable sectionTable,
+			final SubjectTable subjectTable,
+			final ExamTable examTable,
+			final ExamPartExamTable examPartExamTable,
+			final ExamPartTable examPartTable,
+			final ExamAttachmentTable examAttachmentTable,
+			final ExerciseTable exerciseTable,
+			final ExerciseAttachmentTable exerciseAttachmentTable,
+			final ExerciseTagTable exerciseTagTable,
+			final TagTable tagTable,
+			final UserPermissionService userPermissionService,
+			@Qualifier("applicationTaskExecutor") final Executor executor) {
 		this.sectionTable = sectionTable;
 		this.subjectTable = subjectTable;
 		this.examTable = examTable;
@@ -135,7 +136,8 @@ public class SyncExercisesController {
 		}
 
 		this.executor.execute(() -> {
-			try (DeferredDBTransaction transaction = this.examTable.getDatabase().createTransaction()) {
+			try (DeferredDBTransaction transaction = this.examTable.getDatabase()
+					.createTransaction(c -> c.enable(DefaultTransactionOption.DEFER_FOREIGN_KEYS))) {
 				final CSVParser parser = CSVParser.parse(file.getInputStream(),
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
@@ -285,8 +287,8 @@ public class SyncExercisesController {
 
 					try {
 						examData = allowExamCreation
-								? this.examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype))
-								: this.examTable.loadUnique(new ExamData(subjectData.getId(), year, season, subtype));
+								? examTable.loadUniqueIfExistsElseInsert(new ExamData(subjectData.getId(), year, season, subtype))
+								: examTable.loadUnique(new ExamData(subjectData.getId(), year, season, subtype));
 					} catch (final NoMatchingRowException e) {
 						emitter.send(SseEmitter.event().name("warning").data("Exam not found: " + subject));
 						continue;
@@ -327,7 +329,7 @@ public class SyncExercisesController {
 						examAttachmentData = examAttachmentTable.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
 						if (examAttachmentData == null) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
-							throw new Exception();
+							continue;
 						}
 
 						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
@@ -400,7 +402,7 @@ public class SyncExercisesController {
 
 						final List<TagData> neededTagDatas = neededTags.stream()
 								.map(TagData::new)
-								.map(tagTable::loadUniqueIfExists)
+								.map(this.tagTable::loadUniqueIfExists)
 								.filter(Optional::isPresent)
 								.map(Optional::get)
 								.toList();
@@ -443,6 +445,7 @@ public class SyncExercisesController {
 					emitter.send(SseEmitter.event().name("progress").data(index + "/" + rowCount));
 				}
 
+				transaction.commit();
 				emitter.send(SseEmitter.event().name("complete").data("CSV uploaded successfully"));
 
 				emitter.complete();
