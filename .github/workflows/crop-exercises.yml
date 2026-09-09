@@ -110,6 +110,9 @@ jobs:
           ref: main
           fetch-depth: 1
 
+      - name: Pull LFS
+        run: git lfs pull
+
       - name: Set up Python
         uses: actions/setup-python@v6
         continue-on-error: true
