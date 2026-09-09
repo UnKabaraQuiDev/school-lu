@@ -2,6 +2,12 @@ name: Crop exercises
 
 on:
   workflow_dispatch:
+    inputs:
+      path:
+        description: "Path matcher"
+        required: false
+        default: "*"
+        type: string
   schedule:
     - cron: "0 0 * * *"
 #  workflow_run:
@@ -120,7 +126,10 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           PYTHONUNBUFFERED: "1"
         run: |
-          .github/.venv/bin/python .github/scripts/crop-exams.py --headless --workers 1
+          .github/.venv/bin/python .github/scripts/crop-exams.py \
+                --headless \
+                --workers 1 \
+                ${{ github.event_name == 'workflow_dispatch' && format('--matcher "{0}"', inputs.path) || '*' }}
 
       - name: Configure Git
         run: |
