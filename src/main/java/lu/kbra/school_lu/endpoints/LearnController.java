@@ -22,11 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
@@ -48,6 +43,12 @@ import lu.kbra.school_lu.db.table.TagTable;
 import lu.kbra.school_lu.db.table.TagTable.TagProp;
 import lu.kbra.school_lu.service.UserConfigService;
 import lu.kbra.school_lu.service.UserService;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor

@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
+import lu.kbra.pclib.db.impl.DeferredDBTransaction;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
@@ -134,7 +135,7 @@ public class SyncExercisesController {
 		}
 
 		this.executor.execute(() -> {
-			try {
+			try (DeferredDBTransaction transaction = this.examTable.getDatabase().createTransaction()) {
 				final CSVParser parser = CSVParser.parse(file.getInputStream(),
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
@@ -197,6 +198,13 @@ public class SyncExercisesController {
 					return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
 				};
 
+				final SectionTable sectionTable = transaction.use(this.sectionTable);
+				final SubjectTable subjectTable = transaction.use(this.subjectTable);
+				final ExamTable examTable = transaction.use(this.examTable);
+				final ExamPartExamTable examPartExamTable = transaction.use(this.examPartExamTable);
+				final ExamPartTable examPartTable = transaction.use(this.examPartTable);
+				final ExamAttachmentTable examAttachmentTable = transaction.use(this.examAttachmentTable);
+
 				int index = 0;
 				for (final CSVRecord record : records) {
 					index++;
@@ -229,7 +237,7 @@ public class SyncExercisesController {
 					final String additiveBox = PCUtils.nullIfBlank(record.get("Additive box"));
 					final String subtractiveBoxes = PCUtils.nullIfBlank(record.get("Subtractive boxes"));
 					final String attachment = record.get("Attachment");
-					final String sourceExam = PCUtils.nullIfBlank(record.get("SourceExam"));
+					final String source = PCUtils.nullIfBlank(record.get("SourceExam"));
 					final String[] tags = record.get("Tags").split("\\s+");
 
 					if (attachement == null) {
@@ -284,8 +292,8 @@ public class SyncExercisesController {
 						continue;
 					}
 
-					if (sourceExam != null) {
-						final String[] sourceTokens = sourceExam.split(":");
+					if (source != null) {
+						final String[] sourceTokens = source.split(":");
 						final String sourceSection = sourceTokens[0];
 						final String sourceSubject = sourceTokens[1];
 						final int sourceYear = Integer.parseInt(sourceTokens[2]);
@@ -309,39 +317,32 @@ public class SyncExercisesController {
 						default -> null;
 						};
 
-						final ExamData parentExamData = new ExamData(subjectDatas.get(sourceSection).get(sourceSubject).getId(),
-								sourceYear,
-								sourceSeason,
-								sourceSubtype);
-						try {
-							examTable.loadUnique(parentExamData);
-						} catch (final NoMatchingRowException e) {
-							emitter.send(SseEmitter.event().name("warning").data("Parent exam not found: " + sourceExam));
+						final ExamData parentExamData = examTable
+								.bySectionSubjectYearSeasonSubtype(sourceSection, sourceSubject, sourceYear, sourceSeason, sourceSubtype);
+						if (parentExamData == null) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam not found: " + source));
 							continue;
 						}
 
-						try {
-							examAttachmentData = examAttachmentTable
-									.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
-						} catch (final NoMatchingRowException e) {
-							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + sourceExam));
-							continue;
+						examAttachmentData = examAttachmentTable.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
+						if (examAttachmentData == null) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
+							throw new Exception();
 						}
 
-						try {
-							examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
-						} catch (final NoMatchingRowException e) {
-							examPartData = examPartTable.insert(new ExamPartData(name));
+						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
+						if (examPartData == null) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam part not found: " + source));
+							continue;
 						}
 
 						examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), parentExamData.getId()));
 					} else {
 						examAttachmentData = examAttachmentTable
-								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(null, qualifier, attachement));
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(-1L, qualifier, attachement));
 
-						try {
-							examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
-						} catch (final NoMatchingRowException e) {
+						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
+						if (examPartData == null) {
 							examPartData = examPartTable.insert(new ExamPartData(name));
 						}
 					}

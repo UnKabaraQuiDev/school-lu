@@ -22,7 +22,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
-import lu.kbra.pclib.db.exception.TooManyMatchingRowsException;
 import lu.kbra.pclib.db.impl.DeferredDBTransaction;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
@@ -248,39 +247,32 @@ public class SyncExamsController {
 						default -> null;
 						};
 
-						final ExamData parentExamData = new ExamData(subjectDatas.get(sourceSection).get(sourceSubject).getId(),
-								sourceYear,
-								sourceSeason,
-								sourceSubtype);
-						try {
-							examTable.loadUnique(parentExamData);
-						} catch (final NoMatchingRowException e) {
+						final ExamData parentExamData = examTable
+								.bySectionSubjectYearSeasonSubtype(sourceSection, sourceSubject, sourceYear, sourceSeason, sourceSubtype);
+						if (parentExamData == null) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam not found: " + source));
 							continue;
 						}
 
-						try {
-							examAttachmentData = examAttachmentTable
-									.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
-						} catch (final NoMatchingRowException e) {
+						examAttachmentData = examAttachmentTable.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
+						if (examAttachmentData == null) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
-							continue;
+							throw new Exception();
 						}
 
-						try {
-							examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
-						} catch (final NoMatchingRowException e) {
-							examPartData = examPartTable.insert(new ExamPartData(name));
+						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
+						if (examPartData == null) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam part not found: " + source));
+							continue;
 						}
 
 						examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), parentExamData.getId()));
 					} else {
 						examAttachmentData = examAttachmentTable
-								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(null, qualifier, attachement));
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(-1L, qualifier, attachement));
 
-						try {
-							examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
-						} catch (final NoMatchingRowException e) {
+						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
+						if (examPartData == null) {
 							examPartData = examPartTable.insert(new ExamPartData(name));
 						}
 					}

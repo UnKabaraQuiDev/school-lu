@@ -1,13 +1,14 @@
 package lu.kbra.school_lu.db.data;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.Nullable;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
