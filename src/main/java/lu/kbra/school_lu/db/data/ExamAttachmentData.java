@@ -1,11 +1,8 @@
 package lu.kbra.school_lu.db.data;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lu.kbra.pclib.db.annotations.entry.AutoIncrement;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
-import lu.kbra.pclib.db.annotations.entry.Nullable;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.Unique;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
@@ -13,6 +10,9 @@ import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
 import lu.kbra.pclib.db.impl.DatabaseEntry;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.db.table.ExamPartTable;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -25,7 +25,6 @@ public class ExamAttachmentData implements DatabaseEntry {
 
 	@Column
 	@Unique(1)
-	@Nullable
 	@ForeignKey(table = ExamPartTable.class, onDelete = OnAction.CASCADE, onUpdate = OnAction.CASCADE)
 	private Long examPartId;
 
