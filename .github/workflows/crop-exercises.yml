@@ -88,6 +88,9 @@ jobs:
     runs-on: [self-hosted, linux]
 
     steps:
+      - name: Configure Git
+        run: git config core.symlinks true
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
