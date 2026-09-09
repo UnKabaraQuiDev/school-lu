@@ -27,7 +27,6 @@ jobs:
     runs-on: [self-hosted, linux]
 
     if: >
-      github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_run' ||
       github.event_name == 'schedule'
 
@@ -88,8 +87,15 @@ jobs:
 
   export:
     name: Export exam images
+    
     needs: check
-    if: needs.check.outputs.should_run == 'true'
+
+    if: >
+      always() &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        needs.check.outputs.should_run == 'true'
+      )
 
     runs-on: [self-hosted, linux]
 
