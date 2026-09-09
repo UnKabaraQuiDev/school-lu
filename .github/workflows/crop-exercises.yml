@@ -98,11 +98,29 @@ jobs:
           ref: main
           fetch-depth: 1
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Create virtual environment
+        run: |
+          python -m venv .github/.venv
+          .github/.venv/bin/python -m pip install --upgrade pip
+          .github/.venv/bin/pip install -r .github/requirements.txt
+
+      - name: Check Python environment
+        run: |
+          .github/.venv/bin/python --version
+          .github/.venv/bin/python -c "import pymupdf; print('PyMuPDF:', pymupdf.__version__)"
+          .github/.venv/bin/python -c "import PySide6; print('PySide6:', PySide6.__version__)"
+
       - name: Export exam images
         env:
           QT_QPA_PLATFORM: offscreen
+          PYTHONUNBUFFERED: "1"
         run: |
-          python .github/scripts/crop-exams.py --headless --workers 1
+          .github/.venv/bin/python .github/scripts/crop-exams.py --headless --workers 1
 
       - name: Configure Git
         run: |
