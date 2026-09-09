@@ -1,0 +1,40 @@
+Flappy Bird AI Agent Commands:
+
+create virtual environment:
+python -m venv venv
+
+activate environment:
+.\venv\Scripts\Activate.ps1
+
+deactivate environment:
+deactivate
+
+install libraries:
+pip install pygame numpy neat-python jupyter ipykernel matplotlib
+
+expose kernel:
+python -m ipykernel install --user --name code-detector-env --display-name "Python (Flappy Bird AI Player Agent)"
+
+check if kernel exists:
+jupyter kernelspec list
+
+run:
+jupyter notebook
+
+src code:
+https://github.com/sourabhv/FlapPyBird
+
+full environment freeze:
+pip freeze > requirements.txt
+
+examples:
+pygame==2.6.1
+neat-python==0.92.0
+matplotlib==3.8.0
+numpy==1.26.0
+
+install all libraries at once:
+pip install -r requirements.txt
+
+start game:
+python -m src.flappy

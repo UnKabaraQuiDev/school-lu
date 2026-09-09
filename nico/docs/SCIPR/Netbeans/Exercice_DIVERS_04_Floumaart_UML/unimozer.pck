@@ -1,0 +1,13 @@
+false
+true
+true
+true
+true
+true
+"Payment","26","576"
+"ShoppingCart","917","259"
+"Article","489","68"
+"Vendor","41","122"
+"Market","460","476"
+"Cashier","258","814"
+"Organisator","977","590"

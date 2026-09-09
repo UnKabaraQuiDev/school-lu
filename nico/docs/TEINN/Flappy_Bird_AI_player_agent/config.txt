@@ -1,0 +1,5 @@
+window_width=288
+window_height=512
+fps=30
+player_jump=10
+pipe_gap=100

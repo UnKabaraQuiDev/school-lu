@@ -1,0 +1,1 @@
+DELETE FROM exercice02.apartment;

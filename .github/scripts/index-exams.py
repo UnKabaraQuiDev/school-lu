@@ -297,8 +297,61 @@ def collect_exams():
     return rows
 
 
+SEASON_ORDER = {
+    "SUMMER": 0,
+    "SEPT": 1,
+    "SEPTEMBER": 1,
+}
+
+SUBTYPE_ORDER = {
+    "NORMAL": 0,
+    "REP": 1,
+    "AJOU": 2,
+}
+
+
+def sort_key(row):
+    """
+    Sort rows by:
+
+    Section
+    Subject
+    Year
+    Season
+    Subtype
+    Name
+    Qualifier
+    Attachment
+    Source
+    """
+
+    section = row[0]
+    subject = row[1]
+    year = row[2]
+    season = row[3]
+    subtype = row[4]
+    name = row[5]
+    qualifier = row[6]
+    attachment = row[7]
+    source = row[8]
+
+    return (
+        section,
+        subject,
+        year,
+        SEASON_ORDER.get(season, 999),
+        SUBTYPE_ORDER.get(subtype, 999),
+        name,
+        qualifier,
+        attachment,
+        source,
+    )
+
+
 def create_csv(rows):
     """Write all exam attachments to db.csv."""
+
+    rows.sort(key=sort_key)
 
     with OUTPUT_FILE.open(
         "w",

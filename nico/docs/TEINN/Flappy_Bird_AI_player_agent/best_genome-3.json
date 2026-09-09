@@ -1,0 +1,62 @@
+{
+  "key": 499,
+  "fitness": 1706.7383333332727,
+  "nodes": {
+    "0": {
+      "bias": 0.8061670609346466,
+      "response": 1.0,
+      "activation": "tanh",
+      "aggregation": "sum"
+    },
+    "16": {
+      "bias": -0.21113313148980195,
+      "response": 1.0,
+      "activation": "tanh",
+      "aggregation": "sum"
+    },
+    "72": {
+      "bias": -0.33025669755476816,
+      "response": 1.0,
+      "activation": "tanh",
+      "aggregation": "sum"
+    }
+  },
+  "connections": {
+    "-1,0": {
+      "weight": 0.21948308029182462,
+      "enabled": true
+    },
+    "-2,0": {
+      "weight": 2.9686412369228794,
+      "enabled": false
+    },
+    "-3,0": {
+      "weight": 0.9458499418635947,
+      "enabled": false
+    },
+    "-4,0": {
+      "weight": -0.8456911839054373,
+      "enabled": false
+    },
+    "-5,0": {
+      "weight": -3.14428245577586,
+      "enabled": true
+    },
+    "-4,16": {
+      "weight": 0.7222605305916376,
+      "enabled": true
+    },
+    "16,0": {
+      "weight": 0.6177854024580379,
+      "enabled": false
+    },
+    "16,72": {
+      "weight": 0.6002779553438706,
+      "enabled": true
+    },
+    "72,0": {
+      "weight": 0.5713474366403692,
+      "enabled": true
+    }
+  }
+}

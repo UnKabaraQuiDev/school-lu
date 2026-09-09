@@ -1,0 +1,7 @@
+"pk_apartment";"residanceName";"surface";"nbRooms";"balcony";"rentalDate";"maxOccupancy"
+1;"Soleil 1";100;3;"yes";"2010-12-20";6.0
+2;"Soleil 1";88;4;"no";"1996-08-08";8.0
+3;"Ciel bleu";50;5;"yes";"2001-03-28";10.0
+4;"Soleil 2";10;6;"no";"2025-10-16";12.0
+5;"Soleil 3";33;33;"yes";"2025-10-16";66.0
+6;"Soleil 4";50;7;"yes";"2025-10-16";14.0

@@ -1,0 +1,4 @@
+SELECT MONTH(dateOfBirth), COUNT(*)
+FROM Employee
+GROUP BY MONTH(dateOfBirth)
+ORDER BY COUNT(*) DESC;

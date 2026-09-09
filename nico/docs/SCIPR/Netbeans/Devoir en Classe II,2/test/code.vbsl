@@ -1,0 +1,13 @@
+out test
+def a
+def b
+
+// test
+inp a
+inp b
+jpd next
+dec b
+inc a
+jnz b next
+
+out result = al

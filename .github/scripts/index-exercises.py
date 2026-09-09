@@ -94,6 +94,72 @@ TYPE_MAPPING = {
     "DATA": "DATA",
 }
 
+SEASON_ORDER = {
+    "SUMMER": 0,
+    "SEPT": 1,
+    "SEPTEMBER": 1,
+}
+
+SUBTYPE_ORDER = {
+    "NORMAL": 0,
+    "REP": 1,
+    "AJOU": 2,
+}
+
+
+def exam_sort_key(item):
+    """
+    Sort exams by:
+
+        Section
+        Subject
+        Year
+        Season
+        Subtype
+    """
+
+    (
+        section,
+        subject,
+        year,
+        subtype,
+        season,
+    ), _ = item
+
+    return (
+        section,
+        subject,
+        year,
+        SEASON_ORDER.get(season, 999),
+        SUBTYPE_ORDER.get(subtype, 999),
+    )
+
+
+def exercise_sort_key(row):
+    """
+    Sort final CSV rows by:
+
+        Section
+        Subject
+        Year
+        Season
+        Subtype
+        Exercise Index
+        Alternative Index
+        Qualifier
+    """
+
+    return (
+        row[0],  # Section
+        row[1],  # Subject
+        row[2],  # Year
+        SEASON_ORDER.get(row[4], 999),  # Season
+        SUBTYPE_ORDER.get(row[3], 999),  # Subtype
+        row[7],  # Exercise Index
+        row[9],  # Alternative Index
+        row[8],  # Qualifier
+    )
+
 
 # ============================================================
 # Helpers
@@ -523,7 +589,10 @@ def main():
             year,
             subtype,
             season,
-        ), files in sorted(exams.items()):
+        ), files in sorted(
+            exams.items(),
+            key=exam_sort_key,
+        ):
 
             # ====================================================
             # First pass:
@@ -535,6 +604,7 @@ def main():
                 tuple[str, str, str, str, str, int],
                 set[str],
             ] = defaultdict(set)
+            output_rows = []
 
             for document_type, folder in sorted(files.items()):
 
@@ -725,7 +795,7 @@ def main():
                         else:
                             qualifier = document_type
 
-                        writer.writerow(
+                        output_rows.append(
                             [
                                 section,
                                 subject,
@@ -752,6 +822,11 @@ def main():
                     f"{section}/{subject} {year} {season} "
                     f"{subtype} {document_type}"
                 )
+                
+            output_rows.sort(key=exercise_sort_key)
+
+            for row in output_rows:
+                writer.writerow(row)
 
     print(f"Wrote {OUTPUT}")
 

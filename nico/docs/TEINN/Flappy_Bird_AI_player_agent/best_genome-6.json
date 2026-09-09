@@ -1,0 +1,30 @@
+{
+  "key": 649,
+  "fitness": 1739.8283333332752,
+  "nodes": {
+    "0": {
+      "bias": 0.4132384111694003,
+      "response": 1.0,
+      "activation": "tanh",
+      "aggregation": "sum"
+    }
+  },
+  "connections": {
+    "-1,0": {
+      "weight": -0.16597220940876573,
+      "enabled": false
+    },
+    "-2,0": {
+      "weight": 0.44537785407694686,
+      "enabled": false
+    },
+    "-3,0": {
+      "weight": -0.07581764695083,
+      "enabled": false
+    },
+    "-5,0": {
+      "weight": -2.404204171197499,
+      "enabled": true
+    }
+  }
+}
