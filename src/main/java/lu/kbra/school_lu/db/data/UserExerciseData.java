@@ -2,10 +2,10 @@ package lu.kbra.school_lu.db.data;
 
 import java.time.Instant;
 
-import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.annotations.entry.Column;
 import lu.kbra.pclib.db.annotations.entry.DefaultValue;
 import lu.kbra.pclib.db.annotations.entry.ForeignKey;
+import lu.kbra.pclib.db.annotations.entry.OnUpdate;
 import lu.kbra.pclib.db.annotations.entry.PrimaryKey;
 import lu.kbra.pclib.db.annotations.entry.def.MaxLength;
 import lu.kbra.pclib.db.domain.table.ForeignKeyData.OnAction;
@@ -33,15 +33,22 @@ public class UserExerciseData implements DatabaseEntry {
 
 	@Column
 	@DefaultValue("{F:current_timestamp}")
+	@OnUpdate("{F:current_timestamp}")
 	private Instant timestamp;
 
 	@Column
 	@MaxLength(24)
 	private ExerciseStatus status;
 
-	public UserExerciseData(Long userId, Long exerciseId) {
+	public UserExerciseData(final Long userId, final Long exerciseId) {
 		this.userId = userId;
 		this.exerciseId = exerciseId;
+	}
+
+	public UserExerciseData(final Long userId, final Long exerciseId, final ExerciseStatus status) {
+		this.userId = userId;
+		this.exerciseId = exerciseId;
+		this.status = status;
 	}
 
 	public UserExerciseData(final Long userId, final Long exerciseId, final Instant timestamp, final ExerciseStatus status) {
@@ -49,11 +56,6 @@ public class UserExerciseData implements DatabaseEntry {
 		this.exerciseId = exerciseId;
 		this.timestamp = timestamp;
 		this.status = status;
-	}
-
-	@Override
-	public UserExerciseData clone() {
-		return PCUtils.safeClone(super::clone);
 	}
 
 }

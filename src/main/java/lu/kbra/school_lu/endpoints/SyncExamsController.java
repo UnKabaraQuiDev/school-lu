@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import lu.kbra.pclib.PCUtils;
 import lu.kbra.pclib.db.exception.NoMatchingRowException;
 import lu.kbra.pclib.db.impl.DeferredDBTransaction;
+import lu.kbra.pclib.db.transaction.DefaultTransactionOption;
 import lu.kbra.school_lu.data.CurrentUser;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
@@ -108,7 +109,8 @@ public class SyncExamsController {
 		}
 
 		this.executor.execute(() -> {
-			try (DeferredDBTransaction transaction = this.examTable.getDatabase().createTransaction()) {
+			try (DeferredDBTransaction transaction = this.examTable.getDatabase()
+					.createTransaction(c -> c.enable(DefaultTransactionOption.DEFER_FOREIGN_KEYS))) {
 				final CSVParser parser = CSVParser.parse(file.getInputStream(),
 						StandardCharsets.UTF_8,
 						CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).get());
