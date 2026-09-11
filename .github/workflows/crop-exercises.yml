@@ -139,7 +139,7 @@ jobs:
           .github/.venv/bin/python .github/scripts/crop-exams.py \
                 --headless \
                 --workers 1 \
-                "${{ github.event_name == 'workflow_dispatch' && format('--matcher "{0}"', inputs.path) || '*' }}"
+                ${{ github.event_name == 'workflow_dispatch' && format('--matcher "{0}"', inputs.path) || '"*"' }}
 
       - name: Configure Git
         run: |
