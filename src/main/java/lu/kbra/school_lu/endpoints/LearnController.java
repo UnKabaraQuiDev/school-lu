@@ -94,11 +94,15 @@ public class LearnController {
 	}
 
 	@GetMapping("/learn/restore")
-	public ResponseEntity<NextExercise> restore(@CurrentUser final UserData userData) throws JsonProcessingException {
+	public ResponseEntity<NextExercise> restore(@CurrentUser final UserData userData) {
 		final String content = this.userConfigService.getConfig(userData, LearnController.LEARN_SAVED_STATE);
-		final NextExercise result;
+		NextExercise result;
 		if (content != null) {
-			result = this.objectMapper.readValue(content, NextExercise.class);
+			try {
+				result = this.objectMapper.readValue(content, NextExercise.class);
+			} catch (JsonProcessingException e) {
+				result = null;
+			}
 		} else {
 			result = null;
 		}
@@ -147,7 +151,7 @@ public class LearnController {
 			final ExamData examData = this.examTable.byExercise(c);
 			final String subjectName = this.subjectTable.nameByExam(examData);
 			final String sectionName = this.sectionTable.nameByExam(examData);
-			final String examAttachmentName = this.examPartTable.nameByExercise(c);
+			final String examPartName = this.examPartTable.nameByExercise(c);
 			final List<ExerciseAttachment> attachs = this.exerciseAttachmentTable.byExercise(c)
 					.stream()
 					.map(t -> new ExerciseAttachment(t.getQualifier(), t.getLocation()))
@@ -155,8 +159,9 @@ public class LearnController {
 					.toList();
 			final List<Tag> tags = this.tagTable.byExercise(c).stream().map(t -> new Tag(t.getColor(), t.getName())).toList();
 			return new Exercise(
-					new Exam(sectionName, subjectName, examData.getYear(), examData.getSeason(), examData.getSubtype(), examAttachmentName),
+					new Exam(sectionName, subjectName, examData.getYear(), examData.getSeason(), examData.getSubtype(), examPartName),
 					c.getId(),
+					c.getName(),
 					c.getExerciseIndex(),
 					attachs,
 					tags);

@@ -158,7 +158,7 @@ public class SyncExamsController {
 					final int year = Integer.parseInt(record.get("Year"));
 					final ExamSeason season = switch (record.get("Season")) {
 					case "ETE", "SUMMER" -> ExamSeason.SUMMER;
-					case "SEPT" -> ExamSeason.SEPTEMBER;
+					case "SEPT", "SEPTEMBER" -> ExamSeason.SEPTEMBER;
 					default -> null;
 					};
 					final ExamType subtype = switch (record.get("Subtype")) {
@@ -231,7 +231,7 @@ public class SyncExamsController {
 						final int sourceYear = Integer.parseInt(sourceTokens[2]);
 						final ExamSeason sourceSeason = switch (sourceTokens[3]) {
 						case "ETE", "SUMMER" -> ExamSeason.SUMMER;
-						case "SEPT" -> ExamSeason.SEPTEMBER;
+						case "SEPT", "SEPTEMBER" -> ExamSeason.SEPTEMBER;
 						default -> null;
 						};
 						final ExamType sourceSubtype = switch (sourceTokens[4]) {
