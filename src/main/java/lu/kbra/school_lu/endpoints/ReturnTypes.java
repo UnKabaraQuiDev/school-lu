@@ -1,5 +1,6 @@
 package lu.kbra.school_lu.endpoints;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -7,6 +8,7 @@ import java.util.Set;
 import lu.kbra.school_lu.data.ExamAttachmentType;
 import lu.kbra.school_lu.data.ExamSeason;
 import lu.kbra.school_lu.data.ExamType;
+import lu.kbra.school_lu.data.ExerciseStatus;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +17,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public final class ReturnTypes {
+
+	public record ExerciseHistory(
+			Exam exam,
+			Long id,
+			String exerciseName,
+			int exerciseIndex,
+			List<Tag> tags,
+			ExerciseStatus status,
+			Instant timestamp) {
+	}
 
 	public record NextExercise(
 			boolean withSolutionOnly,
@@ -27,7 +39,13 @@ public final class ReturnTypes {
 	public record Exam(String section, String subject, int year, ExamSeason season, ExamType subtype, String name) {
 	}
 
-	public record Exercise(Exam exam, long id, int exerciseIndex, List<ExerciseAttachment> attachments, List<Tag> tags) {
+	public record Exercise(
+			Exam exam,
+			long id,
+			String exerciseName,
+			int exerciseIndex,
+			List<ExerciseAttachment> attachments,
+			List<Tag> tags) {
 	}
 
 	public record ExerciseAttachment(ExamAttachmentType qualifier, String location) {

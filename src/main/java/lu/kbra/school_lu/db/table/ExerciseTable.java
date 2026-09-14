@@ -47,7 +47,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = ExamTable.class),
 					@Table(typeName = SubjectTable.class) },
 			condition = ExerciseTable.hasSolutionAndStatement,
-			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
+			orderBy = { @OrderBy(value = ExerciseTable.randomButOldest, type = OrderBy.Type.DESC) }
 	)
 	public abstract List<ExerciseData> withSolutionAnySubject(@Param Collection<SubjectData> subjects);
 
@@ -62,7 +62,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 			},
 			condition = ExerciseTable.hasSolutionAndStatement,
-			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
+			orderBy = { @OrderBy(value = ExerciseTable.randomButOldest, type = OrderBy.Type.DESC) }
 	)
 	public abstract List<ExerciseData> withSolutionAnySubjectAnyTag(
 			@Param Collection<SubjectData> subjects,
@@ -79,7 +79,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 
 			},
 			condition = ExerciseTable.hasSolutionAndStatement,
-			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
+			orderBy = { @OrderBy(value = ExerciseTable.randomButOldest, type = OrderBy.Type.DESC) }
 	)
 	public abstract List<ExerciseData> withSolutionAnySubjectAllTags(
 			@Param Collection<SubjectData> subjects,
@@ -96,7 +96,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT)
 
 			},
-			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
+			orderBy = { @OrderBy(value = ExerciseTable.randomButOldest, type = OrderBy.Type.DESC) }
 	)
 	public abstract List<ExerciseData> byAnySubjectAllTags(
 			@Param Collection<SubjectData> subjects,
@@ -113,8 +113,8 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
-			condition = hasSolutionAndStatement,
-			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
+			condition = ExerciseTable.hasSolutionAndStatement,
+			orderBy = { @OrderBy(value = ExerciseTable.randomButOldest, type = OrderBy.Type.DESC) }
 	)
 	public abstract List<ExerciseData> withSolutionAnySubjectAllTagsNotStatus(
 			@Param Collection<SubjectData> subjects,
@@ -135,7 +135,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
-			orderBy = { @OrderBy(value = randomButOldest, type = OrderBy.Type.DESC) }
+			orderBy = { @OrderBy(value = ExerciseTable.randomButOldest, type = OrderBy.Type.DESC) }
 	)
 	public abstract List<ExerciseData> byAnySubjectAllTagsNotStatus(
 			@Param Collection<SubjectData> subjects,
@@ -157,7 +157,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = SubjectTable.class),
 					@Table(typeName = ExerciseTagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT) },
-			condition = hasSolutionAndStatement
+			condition = ExerciseTable.hasSolutionAndStatement
 	)
 	public abstract int countWithSolutionAnySubjectAllTags(
 			@Param Collection<SubjectData> subjects,
@@ -192,7 +192,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
-			condition = hasSolutionAndStatement
+			condition = ExerciseTable.hasSolutionAndStatement
 	)
 	public abstract int countWithSolutionAnySubjectAllTagsNotStatus(
 			@Param Collection<SubjectData> subjects,
@@ -233,7 +233,7 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 					@Table(typeName = TagTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserExerciseTable.class, join = Table.Type.LEFT),
 					@Table(typeName = UserTable.class, join = Table.Type.LEFT) },
-			condition = hasSolutionAndStatement,
+			condition = ExerciseTable.hasSolutionAndStatement,
 			groupBy = { "{M:ExamTable:year}" }
 	)
 	public abstract List<YearCount> countWithSolutionAnySubjectAllTagsNotStatusByYear(
@@ -264,11 +264,11 @@ public abstract class ExerciseTable extends DeferredDatabaseTable<ExerciseData> 
 	public record YearCount(@Column int count, @Column int year) implements ReadOnlyDatabaseEntry {
 	}
 
-	public Optional<ExerciseData> byId(long exerciseId) {
+	public Optional<ExerciseData> byId(final long exerciseId) {
 		return super.loadIfExists(new ExerciseData(exerciseId));
 	}
 
-	public boolean exists(long exerciseId) {
+	public boolean exists(final long exerciseId) {
 		return super.exists(new ExerciseData(exerciseId));
 	}
 
