@@ -175,7 +175,7 @@ public class SyncExamsController {
 					case "DATA" -> ExamAttachmentType.DATA;
 					default -> null;
 					};
-					final String attachement = PCUtils.nullIfBlank(record.get("Attachement"));
+					final String attachment = PCUtils.nullIfBlank(record.get("Attachement"));
 					final String source = PCUtils.nullIfBlank(record.get("Source"));
 
 					if (season == null) {
@@ -190,7 +190,7 @@ public class SyncExamsController {
 						emitter.send(SseEmitter.event().name("warning").data("Unknown qualifier: " + Arrays.toString(record.values())));
 						continue;
 					}
-					if (attachement == null) {
+					if (attachment == null) {
 						emitter.send(
 								SseEmitter.event().name("warning").data("Exam with no attachment: " + Arrays.toString(record.values())));
 						continue;
@@ -256,31 +256,27 @@ public class SyncExamsController {
 							continue;
 						}
 
-						examAttachmentData = examAttachmentTable.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
-						if (examAttachmentData == null) {
-							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
-							throw new Exception();
-						}
-
-						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
+						examPartData = examPartTable.byExamAndPartName(parentExamData, name);
 						if (examPartData == null) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam part not found: " + source));
 							continue;
 						}
 
-						examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), parentExamData.getId()));
-					} else {
 						examAttachmentData = examAttachmentTable
-								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(-1L, qualifier, attachement));
-
-						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examPartData.getId(), qualifier, attachment));
+						if (examAttachmentData == null) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
+							continue;
+						}
+					} else {
+						examPartData = examPartTable.byExamAndPartName(examData, name);
 						if (examPartData == null) {
 							examPartData = examPartTable.insert(new ExamPartData(name));
 						}
-					}
 
-					examAttachmentData.setExamPartId(examPartData.getId());
-					examAttachmentTable.update(examAttachmentData);
+						examAttachmentData = examAttachmentTable
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examPartData.getId(), qualifier, attachment));
+					}
 
 					examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), examData.getId()));
 
