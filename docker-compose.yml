@@ -25,6 +25,8 @@ services:
       POSTGRES_DB: school_lu
       POSTGRES_USER: school_lu
       POSTGRES_PASSWORD: ${DB_PWD}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
