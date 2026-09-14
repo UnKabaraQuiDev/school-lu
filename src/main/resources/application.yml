@@ -10,6 +10,9 @@ spring:
 app:
   cors:
     urls: []
+  security:
+    remember-me:
+      sk: ""
 
 pclib:
   db:
