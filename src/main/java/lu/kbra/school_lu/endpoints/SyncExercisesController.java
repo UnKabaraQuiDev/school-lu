@@ -39,7 +39,6 @@ import lu.kbra.school_lu.data.UserPermissionType;
 import lu.kbra.school_lu.db.data.ExamAttachmentData;
 import lu.kbra.school_lu.db.data.ExamData;
 import lu.kbra.school_lu.db.data.ExamPartData;
-import lu.kbra.school_lu.db.data.ExamPartExamData;
 import lu.kbra.school_lu.db.data.ExerciseAttachmentData;
 import lu.kbra.school_lu.db.data.ExerciseData;
 import lu.kbra.school_lu.db.data.ExerciseTagData;
@@ -326,33 +325,27 @@ public class SyncExercisesController {
 							continue;
 						}
 
-						examAttachmentData = examAttachmentTable.byExamAndPartNameAndQualifier(parentExamData, sourceName, sourceQualifier);
-						if (examAttachmentData == null) {
-							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
-							continue;
-						}
-
-						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, parentExamData);
+						examPartData = examPartTable.byExamAndPartName(parentExamData, name);
 						if (examPartData == null) {
 							emitter.send(SseEmitter.event().name("warning").data("Parent exam part not found: " + source));
 							continue;
 						}
 
-						examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), parentExamData.getId()));
-					} else {
 						examAttachmentData = examAttachmentTable
-								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(-1L, qualifier, attachement));
-
-						examPartData = examPartTable.byAttachmentAndExam(examAttachmentData, examData);
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examPartData.getId(), qualifier, attachment));
+						if (examAttachmentData == null) {
+							emitter.send(SseEmitter.event().name("warning").data("Parent exam attachement not found: " + source));
+							continue;
+						}
+					} else {
+						examPartData = examPartTable.byExamAndPartName(examData, name);
 						if (examPartData == null) {
 							examPartData = examPartTable.insert(new ExamPartData(name));
 						}
+
+						examAttachmentData = examAttachmentTable
+								.loadUniqueIfExistsElseInsert(new ExamAttachmentData(examPartData.getId(), qualifier, attachement));
 					}
-
-					examAttachmentData.setExamPartId(examPartData.getId());
-					examAttachmentTable.update(examAttachmentData);
-
-					examPartExamTable.loadIfExistsElseInsert(new ExamPartExamData(examPartData.getId(), examData.getId()));
 
 					final ExerciseData exerciseData = this.exerciseTable
 							.loadUniqueIfExistsElseInsert(new ExerciseData(examPartData.getId(), exerciseIndex));
