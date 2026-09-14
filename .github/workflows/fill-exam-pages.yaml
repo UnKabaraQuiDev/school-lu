@@ -9,9 +9,6 @@ on:
     types: [completed]
   workflow_dispatch:
 
-env:
-  EXAM_TEMPLATES: "exam all index sections subjects years"
-
 permissions:
   contents: write
 
@@ -36,12 +33,7 @@ jobs:
           git worktree add data main
 
       - name: Fill exam-db template
-        run: |
-          ls -la .github/scripts/
-          for name in $EXAM_TEMPLATES; do
-            echo "Running fill-exam-${name}.py"
-            python ".github/scripts/fill-exam-${name}.py"
-          done
+        run: bash .github/scripts/fill-exams.sh
 
       - name: Configure Git
         run: |
