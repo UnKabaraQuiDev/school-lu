@@ -15,58 +15,6 @@
     skip: 'learn/skip',
   }
 
-  /*
-   * Change only these functions if your backend uses a
-   * different JSON structure.
-   */
-
-  async function getJSON (path) {
-    const response = await fetch(apiUrl(path), {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json'
-      }
-    })
-    if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText}`)
-    }
-    return response.json()
-  }
-
-  async function postJSON (path, body) {
-    const response = await fetch(apiUrl(path), {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        [csrf.headerName]: csrf.token
-      },
-      body: JSON.stringify(body)
-    })
-    if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText}`)
-    }
-    return response.json()
-  }
-  
-  async function putJSON (path, body) {
-    const response = await fetch(apiUrl(path), {
-      method: 'PUT',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        [csrf.headerName]: csrf.token
-      },
-      body: JSON.stringify(body)
-    })
-    if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText}`)
-    }
-  }
-
   /* =========================================================
        State
        ========================================================= */
@@ -96,11 +44,6 @@
   const examInfo = document.getElementById('exam-info')
   const examBreadcrumb = document.getElementById('exam-breadcrumb')
   const exerciseTags = document.getElementById('exercise-tags')
-  const examSection = document.getElementById('exam-section')
-  const examSubject = document.getElementById('exam-subject')
-  const examYear = document.getElementById('exam-year')
-  const examSeason = document.getElementById('exam-season')
-  const examSubtype = document.getElementById('exam-subtype')
   const exerciseTemplate = document.getElementById('exercise-template')
 
   /* =========================================================
